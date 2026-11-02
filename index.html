@@ -1,0 +1,1997 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>さんすう みてわかるツール</title>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Maru+Gothic:wght@500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ten:#F5A623; --ten-light:#FFF3DC;
+    --one:#3FA7D6; --one-light:#E4F4FB;
+    --hyaku:#E2574C;
+    --green:#5BAE6C; --green-light:#EAF6EC;
+    --murasaki:#8A6FBF;
+    --ink:#3A3A3A; --line:#C9C9C9; --bg:#FDFBF7;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{ background:var(--bg); color:var(--ink);
+    font-family:"Zen Maru Gothic","Hiragino Maru Gothic ProN","Yu Gothic",sans-serif; }
+  .app{ max-width:860px; margin:0 auto; padding:14px 12px 40px; }
+  h1{ font-size:20px; font-weight:900; text-align:center; margin:6px 0 12px; letter-spacing:.05em; }
+  h1 .m1{ color:var(--ten); } h1 .m2{ color:var(--one); }
+
+  .tabs{ display:flex; gap:6px; margin-bottom:14px; flex-wrap:wrap; }
+  .tab-btn{ flex:1; min-width:104px; border:2px solid var(--line); background:#fff; border-radius:12px;
+    padding:10px 4px; font-family:inherit; font-size:13.5px; font-weight:900; cursor:pointer; color:#888; }
+  .tab-btn.active{ border-color:var(--ten); background:var(--ten-light); color:#B4770A; }
+  .panel{ display:none; background:#fff; border:2px solid #E5E0D5; border-radius:14px; padding:16px; }
+  .panel.active{ display:block; }
+
+  .row{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+  .num-in{ width:86px; font-family:inherit; font-size:22px; font-weight:900; text-align:center;
+    padding:8px 4px; border:2px solid var(--line); border-radius:12px; }
+  .btn{ font-family:inherit; font-size:14px; font-weight:900; padding:10px 16px; border-radius:12px;
+    border:2px solid var(--ink); background:#fff; cursor:pointer; }
+  .btn.primary{ background:var(--ten); border-color:var(--ten); color:#fff; }
+  .btn.blue{ background:var(--one); border-color:var(--one); color:#fff; }
+  .btn.green{ background:var(--green); border-color:var(--green); color:#fff; }
+  .btn.gacha{ background:var(--murasaki); border-color:var(--murasaki); color:#fff; font-size:15px; padding:11px 16px; }
+  .btn.small{ font-size:12.5px; padding:6px 10px; }
+  .op{ font-size:22px; font-weight:900; }
+  .st-btn{ width:46px; height:46px; font-family:inherit; font-size:24px; font-weight:900; border-radius:12px;
+    border:2px solid var(--line); background:#fff; cursor:pointer; color:#555; }
+  .st-btn:active{ background:var(--one-light); }
+  .op-btn{ border:2px solid var(--line); background:#fff; color:#888; }
+  .op-btn.active-op{ border-color:var(--ten); background:var(--ten-light); color:#B4770A; }
+  .mini-help{ font-size:12.5px; font-weight:700; color:#8a7a55; background:#FFFBEF; border:1.5px dashed var(--ten);
+    border-radius:10px; padding:6px 10px; margin-bottom:10px; line-height:1.7; }
+  .pulse{ position:relative; animation:pulse 1.3s ease-in-out infinite; }
+  @keyframes pulse{
+    0%,100%{ transform:scale(1); box-shadow:0 0 0 0 rgba(245,166,35,.55); }
+    50%{ transform:scale(1.06); box-shadow:0 0 0 9px rgba(245,166,35,0); }
+  }
+  .pulse::after{ content:"👇 ここを おしてね"; position:absolute; top:-30px; left:50%; transform:translateX(-50%);
+    font-size:11px; font-weight:900; color:#B4770A; background:#FFF3DC; border:1.5px solid var(--ten);
+    border-radius:8px; padding:2px 8px; white-space:nowrap; z-index:5; }
+
+  .guide{ background:var(--green-light); border:2px solid var(--green); border-radius:12px;
+    padding:10px 14px; font-size:15.5px; font-weight:700; line-height:1.75; margin:10px 0; min-height:58px; }
+  .step-nav{ display:flex; gap:8px; align-items:center; justify-content:center; margin:30px 0 8px; }
+  .step-nav .btn{ min-width:120px; }
+  .step-dots{ font-size:13px; font-weight:900; color:#999; }
+
+  .stage{ display:flex; gap:14px; flex-wrap:wrap; align-items:flex-start; }
+  .stage .visual{ flex:1.6; min-width:300px; }
+  .stage .hissan-wrap{ flex:1; min-width:180px; }
+  .hissan{ font-family:"Menlo","Consolas",monospace; font-size:24px; line-height:1.35; background:#FAFAF5;
+    border:2px solid var(--line); border-radius:12px; padding:12px 14px; white-space:pre; min-height:120px; }
+  .hissan-title{ font-size:13px; font-weight:900; color:#888; margin-bottom:4px; }
+
+  /* ブロック共通（タブレットで押しやすい大きめサイズ） */
+  .blocks{ display:flex; flex-wrap:wrap; gap:5px; align-items:flex-end; min-height:64px; border-radius:8px; padding:3px; }
+  .flat{ width:48px; height:48px; background:var(--hyaku); border:2px solid #B23A31; border-radius:6px;
+    color:#fff; font-size:12px; font-weight:900; display:flex; align-items:center; justify-content:center; }
+  .rod{ width:23px; height:58px; background:var(--ten); border:2px solid #C7860F; border-radius:5px;
+    color:#fff; font-size:10px; font-weight:900; display:flex; align-items:flex-end; justify-content:center; padding-bottom:2px; }
+  .cube{ width:21px; height:21px; background:var(--one); border:2px solid #2B85AD; border-radius:4px; }
+  @media (pointer:coarse){
+    .flat{ width:56px; height:56px; }
+    .rod{ width:28px; height:66px; }
+    .cube{ width:27px; height:27px; }
+    .blocks{ gap:7px; }
+    .st-btn{ width:54px; height:54px; font-size:28px; }
+  }
+  .blocks.dense .flat{ width:34px; height:34px; font-size:9px; }
+  .blocks.dense .rod{ width:16px; height:42px; font-size:0; }
+  .blocks.dense .cube{ width:15px; height:15px; }
+
+  /* わり算（ドラッグ） */
+  .tray-box,.group-box{ border:2px solid var(--line); border-radius:12px; padding:8px; }
+  .tray-box{ background:#FAFAF5; margin-bottom:10px; }
+  .tray-label,.g-label{ font-size:12px; font-weight:900; color:#888; margin-bottom:4px; }
+  .g-count{ font-size:11px; font-weight:700; color:#4A8FB5; min-height:15px; margin-top:3px; }
+  .groups{ display:flex; gap:8px; flex-wrap:wrap; }
+  .group-box{ flex:1; min-width:100px; background:#fff; }
+  .group-box .blocks{ min-height:96px; }
+  .blk{ touch-action:none; cursor:grab; user-select:none; -webkit-user-select:none; }
+  .blk.locked{ opacity:.35; cursor:default; }
+  .blk.ghost{ opacity:.2; }
+  .drag-clone{ position:fixed; z-index:999; pointer-events:none; transform:scale(1.15) rotate(-5deg);
+    filter:drop-shadow(0 4px 6px rgba(0,0,0,.25)); }
+  .blocks.over{ outline:3px dashed var(--one); outline-offset:1px; background:var(--one-light); }
+  .amari .cube{ background:#EF6F6C; border-color:#C24E4B; }
+  .answer-banner{ margin-top:10px; background:var(--ten-light); border:2px solid var(--ten); border-radius:12px;
+    padding:10px; font-size:18px; font-weight:900; text-align:center; color:#B4770A; display:none; }
+
+  /* たし算・ひき算 */
+  .as-row{ border:2px solid var(--line); border-radius:12px; padding:8px; margin-bottom:8px; background:#FAFAF5; }
+  .as-row .blocks{ cursor:default; }
+  .as-row .blk{ cursor:default; touch-action:auto; }
+
+  .q-big{ font-size:38px; font-weight:900; text-align:center; margin:14px 0; letter-spacing:.05em; }
+  .ans-row{ display:flex; gap:10px; justify-content:center; align-items:center; flex-wrap:wrap; }
+  .feedback{ text-align:center; font-size:20px; font-weight:900; min-height:34px; margin-top:10px; }
+  .feedback.good{ color:var(--green); } .feedback.retry{ color:#EF6F6C; }
+  .stars{ text-align:center; font-size:15px; font-weight:700; color:#B4770A; margin-top:4px; }
+
+  .hw-wrap{ margin-top:16px; }
+  .hw-canvas-box{ position:relative; margin:0 auto; max-width:100%; overflow:auto;
+    background:#FAFAF5; border:2px solid var(--line); border-radius:12px; }
+  .hw-canvas-box canvas{ position:absolute; left:0; top:0; display:block; }
+  #hwAns{ pointer-events:none; }
+  #hwDraw{ touch-action:none; cursor:crosshair; -webkit-user-select:none; user-select:none; }
+  .hw-btnrow{ margin-top:10px; justify-content:center; }
+  .hw-check-area{ margin-top:10px; display:flex; align-items:center; justify-content:center; gap:10px;
+    flex-wrap:wrap; border:2px dashed var(--line); border-radius:12px; padding:10px 14px; min-height:60px; background:#fff; }
+  .hw-check-label{ font-size:12px; font-weight:700; color:#888; flex:1; min-width:140px; }
+  .hw-check-mark{ font-size:44px; font-weight:900; color:#E2574C; min-width:52px; text-align:center; line-height:1; }
+
+  select{ font-family:inherit; font-size:14px; font-weight:700; padding:8px; border:2px solid var(--line); border-radius:10px; }
+  .note{ font-size:12.5px; color:#777; line-height:1.7; margin-top:8px; }
+
+  #printArea{ display:none; }
+  @media print{
+    body{ background:#fff; }
+    .app{ display:none !important; }
+    #printArea{ display:block; }
+    @page{ size:A4 portrait; margin:12mm; }
+  }
+  .p-sheet{ width:186mm; margin:0 auto; font-family:"Zen Maru Gothic",sans-serif; }
+  .p-head{ display:flex; align-items:baseline; gap:8mm; border-bottom:2.5px solid var(--ink); padding-bottom:2mm; margin-bottom:5mm; }
+  .p-head h2{ font-size:16px; font-weight:900; }
+  .p-head .p-meta{ margin-left:auto; font-size:11px; font-weight:700; }
+  .p-blank{ display:inline-block; border-bottom:1.2px solid var(--ink); min-width:22mm; }
+  .p-grid{ display:grid; grid-template-columns:1fr 1fr; gap:5mm 8mm; }
+  .p-q{ font-size:14px; font-weight:700; }
+  .p-q .p-no{ display:inline-block; width:7mm; font-weight:900; color:#888; }
+  .p-work{ border:1px solid #CCC; border-radius:3mm; height:32mm; margin-top:1.5mm; }
+  .p-break{ page-break-before:always; }
+  .p-ans{ font-size:12.5px; font-weight:700; line-height:2.1; column-count:2; }
+</style>
+</head>
+<body>
+<div class="app">
+  <h1><span class="m1">さんすう</span> <span class="m2">みてわかる</span>ツール</h1>
+  <div class="tabs">
+    <button class="tab-btn active" data-p="pMult">かけ算</button>
+    <button class="tab-btn" data-p="pDiv">わり算</button>
+    <button class="tab-btn" data-p="pAS">たし算・ひき算</button>
+    <button class="tab-btn" data-p="pPractice">れんしゅう</button>
+    <button class="tab-btn" data-p="pPrint">プリント</button>
+  </div>
+
+  <!-- かけ算 -->
+  <div class="panel active" id="pMult">
+    <div class="row">
+      <button class="st-btn" data-step="mA:-1">−</button>
+      <input class="num-in" id="mA" type="number" inputmode="numeric" value="23" min="10" max="999">
+      <button class="st-btn" data-step="mA:1">＋</button>
+      <span class="op">×</span>
+      <button class="st-btn" data-step="mB:-1">−</button>
+      <input class="num-in" id="mB" type="number" inputmode="numeric" value="4" min="2" max="99">
+      <button class="st-btn" data-step="mB:1">＋</button>
+      <button class="btn primary" id="mGo">この数で 見る</button>
+    </div>
+    <div class="mini-help">🔢 数字を かえたいときは「−」「＋」ボタンを おすと かわるよ。きめたら オレンジの「この数で 見る」を おしてね。むずかしければ 下の 🎲ボタンだけでも OK！</div>
+    <div class="row">
+      <span style="font-weight:900; color:#888">タップで もんだいが 出るよ →</span>
+      <button class="btn gacha" id="mG2">🎲 2けたの もんだい</button>
+      <button class="btn gacha" id="mG3">🎲 3けたの もんだい</button>
+    </div>
+    <div class="guide" id="mGuide"></div>
+    <div class="step-nav">
+      <button class="btn" id="mPrev">← もどる</button>
+      <span class="step-dots" id="mDots"></span>
+      <button class="btn blue" id="mNext">つぎへ →</button>
+    </div>
+    <div class="stage">
+      <div class="visual"><svg id="mSvg" width="100%" viewBox="0 0 580 370" xmlns="http://www.w3.org/2000/svg"></svg></div>
+      <div class="hissan-wrap"><div class="hissan-title">筆算（ひっさん）</div><div class="hissan" id="mHissan"> </div></div>
+    </div>
+    <div class="answer-banner" id="mAns"></div>
+  </div>
+
+  <!-- わり算（ドラッグ操作） -->
+  <div class="panel" id="pDiv">
+    <div class="row">
+      <button class="st-btn" data-step="dD:-1">−</button>
+      <input class="num-in" id="dD" type="number" inputmode="numeric" value="72" min="10" max="999">
+      <button class="st-btn" data-step="dD:1">＋</button>
+      <span class="op">÷</span>
+      <button class="st-btn" data-step="dV:-1">−</button>
+      <input class="num-in" id="dV" type="number" inputmode="numeric" value="3" min="2" max="9">
+      <button class="st-btn" data-step="dV:1">＋</button>
+      <button class="btn primary" id="dGo">この数で はじめる</button>
+    </div>
+    <div class="mini-help">🔢 数字を かえたいときは「−」「＋」ボタンを おすと かわるよ。きめたら オレンジの「この数で はじめる」を おしてね。🎲ボタンで もんだいを 出すのが かんたんだよ！</div>
+    <div class="row">
+      <span style="font-weight:900; color:#888">タップで もんだいが 出るよ →</span>
+      <button class="btn gacha" id="dG2">🎲 2けたの もんだい</button>
+      <button class="btn gacha" id="dG3">🎲 3けたの もんだい</button>
+    </div>
+    <div class="guide" id="dGuide"></div>
+    <div class="row" style="justify-content:center">
+      <button class="btn blue" id="dDeal">⚡ みんなに 1こずつ くばる</button>
+      <button class="btn green" id="dPhase" style="display:none">ばらす</button>
+      <button class="btn small" id="dReset">🔄 さいしょから</button>
+    </div>
+    <div class="stage">
+      <div class="visual">
+        <div class="tray-box"><div class="tray-label" id="trayLabel"></div><div class="blocks" data-zone="tray" id="tray"></div></div>
+        <div class="groups" id="groups"></div>
+      </div>
+      <div class="hissan-wrap"><div class="hissan-title">筆算（ひっさん）</div><div class="hissan" id="dHissan"> </div></div>
+    </div>
+    <div class="answer-banner" id="dAns"></div>
+  </div>
+
+  <!-- たし算・ひき算 -->
+  <div class="panel" id="pAS">
+    <div class="row">
+      <button class="btn op-btn active-op" id="asOpAdd">➕ たし算</button>
+      <button class="btn op-btn" id="asOpSub">➖ ひき算</button>
+    </div>
+    <div class="row">
+      <button class="st-btn" data-step="asA:-1">−</button>
+      <input class="num-in" id="asA" type="number" inputmode="numeric" value="47" min="10" max="999">
+      <button class="st-btn" data-step="asA:1">＋</button>
+      <span class="op" id="asOpMark">＋</span>
+      <button class="st-btn" data-step="asB:-1">−</button>
+      <input class="num-in" id="asB" type="number" inputmode="numeric" value="85" min="10" max="999">
+      <button class="st-btn" data-step="asB:1">＋</button>
+      <button class="btn primary" id="asGo">この数で 見る</button>
+    </div>
+    <div class="mini-help">🔢 数字を かえたいときは「−」「＋」ボタンを おすと かわるよ。きめたら オレンジの「この数で 見る」を おしてね。🎲ボタンで もんだいを 出すのが かんたんだよ！</div>
+    <div class="row">
+      <span style="font-weight:900; color:#888">タップで もんだいが 出るよ →</span>
+      <button class="btn gacha" id="asG2">🎲 2けたの もんだい</button>
+      <button class="btn gacha" id="asG3">🎲 3けたの もんだい</button>
+    </div>
+    <div class="guide" id="asGuide"></div>
+    <div class="step-nav">
+      <button class="btn" id="asPrev">← もどる</button>
+      <span class="step-dots" id="asDots"></span>
+      <button class="btn blue" id="asNext">つぎへ →</button>
+    </div>
+    <div class="stage">
+      <div class="visual" id="asVisual"></div>
+      <div class="hissan-wrap"><div class="hissan-title">筆算（ひっさん）</div><div class="hissan" id="asHissan"> </div></div>
+    </div>
+    <div class="answer-banner" id="asAns"></div>
+  </div>
+
+  <!-- れんしゅう -->
+  <div class="panel" id="pPractice">
+    <div class="row">
+      <span style="font-weight:900">もんだいの しゅるい：</span>
+      <select id="prType">
+        <option value="aa1">たし算（2けた ＋ 2けた）</option>
+        <option value="aa2">たし算（3けた ＋ 3けた）</option>
+        <option value="ss1">ひき算（2けた − 2けた）</option>
+        <option value="ss2">ひき算（3けた − 3けた）</option>
+        <option value="m1">かけ算（2けた × 1けた）</option>
+        <option value="m2">かけ算（2けた × 2けた）</option>
+        <option value="m3">かけ算（3けた × 1けた）</option>
+        <option value="m4">かけ算（3けた × 2けた）</option>
+        <option value="d0">わり算 2けた÷1けた（わりきれる）</option>
+        <option value="d1">わり算 2けた÷1けた（あまりあり）</option>
+        <option value="d2">わり算 3けた÷1けた（わりきれる）</option>
+        <option value="d3">わり算 3けた÷1けた（あまりあり）</option>
+      </select>
+      <button class="btn primary" id="prNew">もんだいを 出す</button>
+    </div>
+    <div class="q-big" id="prQ">ボタンを おしてね</div>
+    <div class="ans-row" id="prAnsRow" style="display:none">
+      <span style="font-weight:900">こたえ</span>
+      <input class="num-in" id="prA1" type="number" inputmode="numeric">
+      <span id="prAmariWrap" style="display:none; font-weight:900">あまり <input class="num-in" id="prA2" type="number" inputmode="numeric" value="0"></span>
+      <button class="btn blue" id="prCheck">こたえあわせ</button>
+      <button class="btn small" id="prShow">図で やってみる</button>
+      <button class="btn small" id="prHandwrite">✍️ 手書きでとく</button>
+    </div>
+    <div class="feedback" id="prFb"></div>
+    <div class="stars" id="prStars"></div>
+
+    <div class="hw-wrap" id="hwWrap" style="display:none">
+      <div class="hissan-title">手書きで といてみよう（けいさんを マス目に 書きこもう）</div>
+      <div class="mini-help">くり上がり・くり下がりは 上の小さいマスに かこう</div>
+      <div class="hw-canvas-box" id="hwCanvasBox">
+        <canvas id="hwBg"></canvas>
+        <canvas id="hwAns"></canvas>
+        <canvas id="hwDraw"></canvas>
+      </div>
+      <div class="hw-check-area" id="hwCheckArea">
+        <span class="hw-check-label">せいごチェック：うえの「こたえ」を にゅうりょくすると 自動で出るよ</span>
+        <span class="hw-check-mark" id="hwCheckMark"></span>
+      </div>
+      <div class="row hw-btnrow">
+        <button class="btn small" id="hwClear">🧹 けす</button>
+        <button class="btn blue" id="hwCheck">こたえあわせ</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- プリント -->
+  <div class="panel" id="pPrint">
+    <div class="row">
+      <span style="font-weight:900">しゅるい：</span>
+      <select id="ppType">
+        <option value="aa1">たし算（2けた＋2けた）</option>
+        <option value="aa2">たし算（3けた＋3けた）</option>
+        <option value="ss1">ひき算（2けた−2けた）</option>
+        <option value="ss2">ひき算（3けた−3けた）</option>
+        <option value="m1">かけ算（2けた×1けた）</option>
+        <option value="m2">かけ算（2けた×2けた）</option>
+        <option value="m3">かけ算（3けた×1けた）</option>
+        <option value="m4">かけ算（3けた×2けた）</option>
+        <option value="d0">わり算 2けた÷1けた（わりきれる）</option>
+        <option value="d1">わり算 2けた÷1けた（あまりあり）</option>
+        <option value="d2">わり算 3けた÷1けた（わりきれる）</option>
+        <option value="d3">わり算 3けた÷1けた（あまりあり）</option>
+        <option value="mix2">ミックス（2けた ぜんぶ）</option>
+        <option value="mix3">ミックス（3けた ぜんぶ）</option>
+      </select>
+      <span style="font-weight:900">もんだい数：</span>
+      <select id="ppCount"><option>10</option><option>12</option><option>16</option></select>
+      <button class="btn primary" id="ppMake">プリントを作って 印刷</button>
+    </div>
+    <div class="note">・筆算を書くためのスペース(わく)つきで作られます。<br>・2ページ目に「こたえ」がつきます。<br>・同じ設定でも毎回ちがう問題が作られます。</div>
+  </div>
+</div>
+
+<div id="printArea"></div>
+
+<script id="sansuu-log">
+/* ==================================================
+   学習ログ（IndexedDB）— 記録の処理はこの包みの中だけ。
+   外に出す名前は window.sansuuLog だけ。
+   この <script> を丸ごと消しても、今のアプリは動く。
+   ================================================== */
+(function(){
+"use strict";
+let params=null;
+try{ params=new URLSearchParams(location.search); }catch(_){ params=null; }
+const flag=(n,v)=> !!params && params.get(n)===(v||"1");
+if(flag("nolog")) return;                       // ?nolog=1：何もしない
+
+const DB_NAME="sansuu-log", DB_VERSION=1, SCHEMA_VERSION=1, APP_VERSION="2026.11.01-1";
+const DAY_BOUNDARY_HOUR=3;                      // 1日の区切り：午前3時（決7）
+const FLAGS={ nodb:flag("nodb"), dev:flag("dev"), drawLegacy:flag("draw","legacy") };
+const NOOP=function(){};
+const api={
+  problemShown:NOOP, answerChecked:NOOP, figureShown:NOOP,
+  hwOpened:NOOP, hwCleared:NOOP, modelShown:NOOP,
+  whenIdle:function(){ return Promise.resolve(); },
+  appVersion:APP_VERSION
+};
+window.sansuuLog=api;
+if(FLAGS.nodb || !window.indexedDB) return;     // ?nodb=1：名前はあるが何もしない
+
+/* ---------- 小さな道具 ---------- */
+const warn=(m,e)=>{ try{ console.warn("[sansuu-log] "+m, e&&(e.name||e.message)||e||""); }catch(_){} };
+const pad=n=>String(n).padStart(2,"0");
+const iso=t=>new Date(t==null?Date.now():t).toISOString();
+const dayKeyOf=t=>{ const d=new Date((t==null?Date.now():t)-DAY_BOUNDARY_HOUR*3600000);
+  return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate()); };
+function uuid(){
+  try{ if(window.crypto && crypto.randomUUID) return crypto.randomUUID(); }catch(_){}
+  const b=new Uint8Array(16); crypto.getRandomValues(b);
+  b[6]=(b[6]&15)|64; b[8]=(b[8]&63)|128;
+  const h=Array.from(b,x=>(x+256).toString(16).slice(1)).join("");
+  return h.slice(0,8)+"-"+h.slice(8,12)+"-"+h.slice(12,16)+"-"+h.slice(16,20)+"-"+h.slice(20);
+}
+const req=r=>new Promise((res,rej)=>{ r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error); });
+const txDone=tx=>new Promise((res,rej)=>{ tx.oncomplete=()=>res(); tx.onerror=()=>rej(tx.error); tx.onabort=()=>rej(tx.error||new Error("abort")); });
+const domReady=new Promise(res=>{
+  if(document.readyState!=="loading") res();
+  else document.addEventListener("DOMContentLoaded",()=>res(),{once:true});
+});
+
+/* ---------- buildHash：2つの <script> の文字から SHA-256、先頭8文字 ---------- */
+async function computeBuildHash(){
+  const mine=document.getElementById("sansuu-log");
+  const main=Array.from(document.scripts).filter(s=>s!==mine && !s.src)[0];
+  const text=(mine?mine.textContent:"")+"\n/*--main--*/\n"+(main?main.textContent:"");
+  try{
+    if(window.crypto && crypto.subtle){
+      const buf=await crypto.subtle.digest("SHA-256",new TextEncoder().encode(text));
+      return Array.from(new Uint8Array(buf),x=>(x+256).toString(16).slice(1)).join("").slice(0,8);
+    }
+  }catch(_){}
+  let h=0x811c9dc5;                              // SHA-256 が使えないとき（FNV-1a）
+  for(let i=0;i<text.length;i++){ h^=text.charCodeAt(i); h=Math.imul(h,0x01000193)>>>0; }
+  return "f:"+(h>>>0).toString(16).padStart(8,"0");   // 作り方がちがうことが分かるように頭に "f:"（SHA-256 のときは8文字だけ）
+}
+
+/* ---------- DB の作り（2.2 の11の表と索引を全部、版1で） ---------- */
+const STORES={
+  meta:        [["by_name","name",true]],
+  settings:    [["by_name","name",true]],
+  sessions:    [["by_startedAt","createdAt"],["by_dayKey","dayKey"]],
+  days:        [["by_child_day",["childId","dayKey"],true]],
+  attempts:    [["by_createdAt","createdAt"],["by_dayKey","dayKey"],["by_sessionId","sessionId"],
+                ["by_unit_createdAt",["problem.unit","createdAt"]],["by_status","status"],["by_retryOf","retry.retryOf"]],
+  strokes:     [["by_attempt_seq",["attemptId","seq"]],["by_createdAt","createdAt"]],
+  labels:      [["by_attemptId","attemptId"],["by_labeledAt","labeledAt"]],
+  reviewItems: [["by_attemptId","attemptId",true],["by_status","status"]],
+  exports:     [["by_exportedAt","exportedAt"]],
+  deletions:   [["by_targetId","targetId"],["by_deletedAt","deletedAt"]],
+  outbox:      [["by_createdAt","createdAt"]]
+};
+let ident=null, buildHash=null, db=null;
+const base=rec=>{ rec.v=SCHEMA_VERSION; rec.childId=ident.childId; rec.deviceId=ident.deviceId; return rec; };
+
+function openDB(){
+  return new Promise((res,rej)=>{
+    let rq;
+    try{ rq=indexedDB.open(DB_NAME,DB_VERSION); }catch(e){ rej(e); return; }
+    rq.onupgradeneeded=(e)=>{
+      const d=rq.result, tx=rq.transaction, from=e.oldVersion||0;
+      if(from<1){
+        Object.keys(STORES).forEach(name=>{
+          const st=d.createObjectStore(name,{keyPath:"id"});
+          STORES[name].forEach(([ix,kp,uniq])=>st.createIndex(ix,kp,{unique:!!uniq}));
+        });
+        // 版の作り直しは排他なので、ここで identity を作れば2つのタブでも1件になる
+        const now=iso(), childId=uuid(), deviceId=uuid();
+        const common={v:SCHEMA_VERSION, childId, deviceId, createdAt:now};
+        tx.objectStore("settings").add(Object.assign({id:uuid(), updatedAt:now, name:"identity", value:{childId,deviceId}},common));
+        tx.objectStore("meta").add(Object.assign({id:uuid(), name:"dbCreated", value:{appVersion:APP_VERSION, buildHash}},common));
+        tx.objectStore("meta").add(Object.assign({id:uuid(), name:"upgrades", value:[{from, to:1, at:now, appVersion:APP_VERSION}]},common));
+      }
+    };
+    rq.onsuccess=()=>{ const d=rq.result; d.onversionchange=()=>{ try{ d.close(); }catch(_){} }; res(d); };
+    rq.onerror=()=>rej(rq.error);
+    rq.onblocked=()=>warn("open blocked");
+  });
+}
+
+/* identity がなければ作る。一意の索引でぶつかったら読み直して保存されたほうを使う */
+async function ensureIdentity(){
+  const read=async()=>{ const tx=db.transaction("settings","readonly");
+    return req(tx.objectStore("settings").index("by_name").get("identity")); };
+  let rec=await read();
+  if(rec && rec.value) return rec.value;
+  const now=iso(), childId=uuid(), deviceId=uuid();
+  try{
+    const tx=db.transaction("settings","readwrite");
+    const st=tx.objectStore("settings");
+    const again=await req(st.index("by_name").get("identity"));
+    if(!again) st.add({id:uuid(), v:SCHEMA_VERSION, childId, deviceId, createdAt:now, updatedAt:now, name:"identity", value:{childId,deviceId}});
+    await txDone(tx);
+  }catch(e){ if(!(e && e.name==="ConstraintError")) throw e; }
+  rec=await read();
+  return rec.value;
+}
+async function ensureMetaCreated(){
+  const tx=db.transaction("meta","readwrite"), st=tx.objectStore("meta");
+  const r=await req(st.index("by_name").get("dbCreated"));
+  if(!r) st.add(base({id:uuid(), createdAt:iso(), name:"dbCreated", value:{appVersion:APP_VERSION, buildHash}}));
+  await txDone(tx);
+}
+
+/* ---------- 書き込みの順番待ちの列（子どもの画面は待たない） ---------- */
+let ready=null;
+let chain=Promise.resolve();
+async function runJob(job){
+  try{ await job(); }
+  catch(e){
+    if(e && e.name==="QuotaExceededError"){ try{ await job(); return; }catch(e2){ e=e2; } }
+    warn("write failed",e);
+  }
+}
+function enqueue(job){
+  chain=chain.then(()=>ready).then(ok=>{ if(ok) return runJob(job); }).catch(e=>warn("queue",e));
+  return chain;
+}
+api.whenIdle=function(){ return chain.then(()=>ready).then(()=>chain).then(()=>undefined,()=>undefined); };
+
+/* ---------- 共通の書き込み道具 ---------- */
+async function putSettingTx(tx,name,value){
+  const st=tx.objectStore("settings");
+  const cur=await req(st.index("by_name").get(name));
+  const now=iso();
+  if(cur){ Object.assign(cur,{value, updatedAt:now}); st.put(cur); }
+  else st.add(base({id:uuid(), createdAt:now, updatedAt:now, name, value}));
+}
+const DAY_DEFAULTS={dailyGoal:5, bonusLimit:10};
+async function bumpDay(tx,childId,dayKey,fn){
+  const st=tx.objectStore("days");
+  let d=await req(st.index("by_child_day").get([childId,dayKey]));
+  const now=iso();
+  if(!d){
+    d=base({id:uuid(), createdAt:now, dayKey, dailyGoal:DAY_DEFAULTS.dailyGoal, bonusLimit:DAY_DEFAULTS.bonusLimit,
+      countedDone:0, mainDone:0, retryDone:0, bonusDone:0, stars:0, skipped:0, leftAfterWrong:0, abandoned:0,
+      firstAt:null, goalReachedAt:null, difficultySnapshot:null, uiVariant:"legacy-practice-v0"});
+    d.childId=childId;
+  }
+  fn(d); d.updatedAt=now;
+  st.put(d);
+}
+
+/* ---------- ステップ2：起動の記録（sessions） ---------- */
+const openedAt=Date.now();
+const sessionId=uuid();
+const mm=q=>{ try{ return matchMedia(q).matches; }catch(_){ return null; } };
+const SESSION={
+  id:sessionId, createdAt:iso(openedAt), appVersion:APP_VERSION, buildHash:null, lastActiveAt:iso(openedAt),
+  dayKey:dayKeyOf(openedAt), tzOffsetMin:new Date(openedAt).getTimezoneOffset(),
+  displayMode:(mm("(display-mode: standalone)") || navigator.standalone===true) ? "standalone" : "browser",
+  device:{ ua:navigator.userAgent, uaData:null, screen:{w:screen.width, h:screen.height}, dpr:window.devicePixelRatio||1, lang:navigator.language },
+  pointerCaps:{ maxTouchPoints:navigator.maxTouchPoints||0, coarse:mm("(pointer: coarse)"), anyFine:mm("(any-pointer: fine)") },
+  storage:null, visibility:[], flags:FLAGS
+};
+const uaDataP=(async()=>{
+  try{
+    const u=navigator.userAgentData; if(!u) return;
+    SESSION.device.uaData={platform:u.platform||null, mobile:!!u.mobile, model:null};
+    if(u.getHighEntropyValues){
+      const hv=await Promise.race([u.getHighEntropyValues(["model"]), new Promise(r=>setTimeout(()=>r(null),500))]);
+      if(hv) SESSION.device.uaData.model=hv.model||null;
+    }
+  }catch(_){}
+})();
+async function writeSessionNow(){
+  const tx=db.transaction("sessions","readwrite");
+  tx.objectStore("sessions").put(base(Object.assign({},SESSION,{buildHash})));
+  await txDone(tx);
+}
+const writeSession=()=>enqueue(writeSessionNow);
+
+/* 画面が隠れた・戻った（あとのステップがここに処理を足す） */
+const hiddenHooks=[], shownHooks=[];
+document.addEventListener("visibilitychange",()=>{
+  try{
+    if(document.visibilityState==="hidden"){
+      SESSION.visibility.push({hiddenAt:iso(), shownAt:null});
+      hiddenHooks.forEach(f=>{ try{ f("hidden"); }catch(e){ warn("hidden",e); } });
+    }else{
+      const last=SESSION.visibility[SESSION.visibility.length-1];
+      if(last && !last.shownAt) last.shownAt=iso();
+      shownHooks.forEach(f=>{ try{ f(); }catch(e){ warn("shown",e); } });
+    }
+    SESSION.lastActiveAt=iso(); writeSession();
+  }catch(e){ warn("visibility",e); }
+},{passive:true});
+window.addEventListener("pagehide",()=>{
+  try{
+    hiddenHooks.forEach(f=>{ try{ f("pagehide"); }catch(e){ warn("pagehide",e); } });
+    SESSION.lastActiveAt=iso(); writeSession();
+  }catch(e){ warn("pagehide",e); }
+},{passive:true});
+/* 操作による lastActiveAt の更新：見るだけ、30秒に1回まで */
+let lastActiveWrite=0;
+const onActive=()=>{ try{ const now=Date.now(); if(now-lastActiveWrite<30000) return; lastActiveWrite=now; SESSION.lastActiveAt=iso(now); writeSession(); }catch(_){} };
+["pointerdown","keydown","input"].forEach(t=>document.addEventListener(t,onActive,{passive:true, capture:true}));
+
+/* 消さない依頼と使用量（画面には何も出さない） */
+async function probeStorage(){
+  const S=navigator.storage; let persisted=null, requestedAt=null, est=null;
+  try{ if(S && S.persist){ requestedAt=iso(); persisted=await S.persist(); } }catch(_){}
+  try{ if(S && S.persisted) persisted=await S.persisted(); }catch(_){}
+  try{ if(S && S.estimate){ const e=await S.estimate(); est={usage:e.usage==null?null:e.usage, quota:e.quota==null?null:e.quota, at:iso()}; } }catch(_){}
+  SESSION.storage={persisted, usage:est?est.usage:null, quota:est?est.quota:null};
+  await enqueue(async()=>{
+    const tx=db.transaction(["settings","sessions"],"readwrite");
+    await putSettingTx(tx,"storage",{persistRequestedAt:requestedAt, persisted, lastEstimate:est});
+    tx.objectStore("sessions").put(base(Object.assign({},SESSION,{buildHash})));
+    await txDone(tx);
+  });
+}
+
+/* 前に開いたときの途中の問題：そのセッションが30分より前に止まっていれば abandoned */
+async function markAbandoned(){
+  const cutoff=Date.now()-30*60000;
+  const tx=db.transaction(["attempts","sessions","days"],"readwrite");
+  const at=tx.objectStore("attempts"), ss=tx.objectStore("sessions");
+  const list=await req(at.index("by_status").getAll("in_progress"));
+  for(const a of list){
+    if(a.sessionId===sessionId) continue;
+    const s=await req(ss.get(a.sessionId));
+    // そのセッションの最後の操作と、その問題の最後の書き込みの、新しいほうで判断する
+    const last=Math.max(s ? Date.parse(s.lastActiveAt)||0 : 0, Date.parse(a.updatedAt||a.createdAt)||0);
+    if(!(last>=cutoff)){
+      a.status="abandoned"; a.updatedAt=iso(); at.put(a);
+      await bumpDay(tx,a.childId,a.dayKey,d=>{ d.abandoned++; });
+    }
+  }
+  await txDone(tx);
+}
+
+/* ---------- ステップ3：今の画面の問題の記録（attempts） ---------- */
+const UI_FLAGS={liveMark:true, modelOverlay:true, unlimitedTries:true, skippable:true, osKeyboard:true};
+const el=id=>document.getElementById(id);
+const pnow=()=>performance.now();
+const inputVal=id=>{ const e=el(id); return e ? String(e.value) : ""; };
+const toNum=s=>{ if(s==="" || s==null) return null; const n=Number(s); return isFinite(n) ? n : null; };
+const markOf=t=>{ t=String(t||"").trim(); return t==="○" ? "o" : t==="×" ? "x" : null; };
+let A=null;                                     // いま記録中の問題（prCur を当てにせず記録の側で持つ）
+let currentTab=null;
+let hiddenSince=document.visibilityState==="hidden" ? pnow() : null;
+
+function problemFrom(cur,type){
+  const text=String(cur.text||"").replace(" =","");
+  let unit, calc, answer, key;
+  if(cur.kind==="m"){ unit="mul"; calc={op:"mul", a:cur.a, b:cur.b}; answer={value:cur.a*cur.b}; key="mul:"+cur.a+"x"+cur.b; }
+  else if(cur.kind==="d"){ unit="div"; calc={op:"div", a:cur.d, b:cur.v}; answer={q:cur.q, r:cur.r}; key="div:"+cur.d+"/"+cur.v; }
+  else{ unit=cur.op==="sub" ? "sub" : "add"; calc={op:unit, a:cur.a, b:cur.b}; answer={value:cur.ansNum}; key=unit+":"+cur.a+(unit==="add"?"+":"-")+cur.b; }
+  return {unit, calc, answer, key, presentation:{style:"shiki", text},
+    conditions:{genType:type==null ? null : String(type), difficulty:null, generatorVersion:0, source:"random"}};
+}
+function newDraft(startMs){
+  return {startMs, keys:[], deleteCount:0, clearCount:0, keyCount:0, prev:{q:inputVal("prA1"), r:inputVal("prA2")}};
+}
+function newAttempt(cur,type){
+  const t=Date.now();
+  return {id:uuid(), createdAt:iso(t), t0:pnow(), dayKey:dayKeyOf(t), orderInDay:null,
+    status:"in_progress", endedAt:null, endPerf:null, problem:problemFrom(cur,type), hwUsed:false,
+    tries:[], peeks:[], firstTryClean:null, surfaces:[], canvasEvents:[],
+    counts:{contacts:0, shown:null, hidden:null, outside:0, clears:0}, ptypes:{},   // 今の描き方では表示を選ばないので shown/hidden は null
+    page:0, strokeSeq:0, hiddenMs:0, draft:newDraft(0), lastLive:null, finalDay:null};
+}
+function primaryOf(a){
+  let best=null, n=-1;
+  Object.keys(a.ptypes).forEach(k=>{ if(a.ptypes[k]>n){ n=a.ptypes[k]; best=k; } });
+  return best;
+}
+function attemptRecord(a){
+  const now=pnow(), end=a.endPerf!=null ? a.endPerf : now;
+  let hid=a.hiddenMs;
+  if(hiddenSince!=null && a.endPerf==null && a===A) hid+=now-Math.max(hiddenSince,a.t0);
+  const totalMs=Math.max(0,Math.round(end-a.t0)), hiddenMs=Math.max(0,Math.round(hid));
+  const tries=a.tries, first=tries[0]||null, ci=tries.findIndex(t=>t.correct);
+  const dr=a.draft;
+  return base({
+    id:a.id, createdAt:a.createdAt, updatedAt:iso(), sessionId, appVersion:APP_VERSION, buildHash,
+    uiVariant:"legacy-practice-v0", uiFlags:UI_FLAGS, endedAt:a.endedAt, dayKey:a.dayKey, orderInDay:a.orderInDay,
+    status:a.status, kind:"main", isBonus:false, countsTowardGoal:false,
+    problem:a.problem, answerMode:"osKeyboard", hwUsed:a.hwUsed,
+    result:{correctOnTry:ci>=0 ? ci+1 : null, firstTryCorrect:first ? !!first.correct : null, firstTryClean:a.firstTryClean,
+      // finalAnswer：最初に正解した回の答え（正解していなければ最後の回）
+      triesCount:tries.length, finalAnswer:ci>=0 ? tries[ci].answerRaw : tries.length ? tries[tries.length-1].answerRaw : null, starAwarded:ci>=0,
+      totalMs, activeMs:Math.max(0,totalMs-hiddenMs), hiddenMs},
+    tries, hints:[], maxHintLevel:0, hintSetVersion:null, peeks:a.peeks, retry:null,
+    inputEnv:{surfaces:a.surfaces, primaryInput:primaryOf(a), inkRulesVersion:0},
+    canvasEvents:a.canvasEvents, counts:a.counts,
+    draftTry:dr.keys.length ? {startMs:dr.startMs, keys:dr.keys, deleteCount:dr.deleteCount, clearCount:dr.clearCount, keyCount:dr.keyCount} : null
+  });
+}
+/* attempts を書く入口はここだけ（同じ書き込みの中で、DB の今の状態を読んでから書く）。
+   ・別のタブが abandoned にした問題を、このタブがまだ解いていた → days.abandoned を1つ戻す（二重に数えない）
+   ・その日のまとめ（dayFn：星・skipped・left_after_wrong）は、1つの問題に1回だけ（dayTallied の印で確かめる） */
+async function putAttemptTx(tx,a,dayFn){
+  const st=tx.objectStore("attempts");
+  const old=await req(st.get(a.id));
+  if(old && old.status==="abandoned" && a.status!=="abandoned" && !a.resumedAfterAbandoned){
+    a.resumedAfterAbandoned=true;
+    await bumpDay(tx,old.childId,old.dayKey,d=>{ if(d.abandoned>0) d.abandoned--; });
+  }
+  if(old && old.dayTallied) a.dayTallied=true;
+  if(dayFn && !a.dayTallied){ await bumpDay(tx,ident.childId,a.dayKey,dayFn); a.dayTallied=true; }
+  const rec=attemptRecord(a);
+  if(a.resumedAfterAbandoned) rec.resumedAfterAbandoned=true;
+  rec.dayTallied=!!a.dayTallied;
+  st.put(rec);
+}
+function saveAttempt(a,dayFn,strict){
+  return enqueue(async()=>{
+    const tx=db.transaction(["attempts","days"],"readwrite",strict ? {durability:"strict"} : undefined);
+    await putAttemptTx(tx,a,dayFn);
+    await txDone(tx);
+  });
+}
+/* 前の問題の終わり方：答えていない→skipped、×だけ→left_after_wrong、正解済み→そのまま */
+function finishPrev(p){
+  if(p.status!=="in_progress") return;
+  const now=pnow();
+  if(p.tries.length===0){ p.status="skipped"; p.finalDay=d=>{ d.skipped++; }; }
+  else{ p.status="left_after_wrong"; p.finalDay=d=>{ d.leftAfterWrong++; }; }
+  p.endedAt=iso(); p.endPerf=now;
+}
+api.problemShown=function(d){
+  try{
+    if(!d || !d.cur) return;
+    closeHw("closed");
+    const prev=A;
+    if(prev) finishPrev(prev);
+    const a=newAttempt(d.cur,d.type);
+    a.cur=d.cur;                                  // 画面の問題（prCur）と同じものかを、答えたときに確かめる
+    A=a;
+    enqueue(async()=>{
+      const tx=db.transaction(["attempts","days"],"readwrite",{durability:"strict"});
+      const st=tx.objectStore("attempts");
+      if(prev){ const f=prev.finalDay; prev.finalDay=null; await putAttemptTx(tx,prev,f); }
+      const n=await req(st.index("by_dayKey").count(a.dayKey));
+      a.orderInDay=n+1;
+      await putAttemptTx(tx,a,null);
+      await bumpDay(tx,ident.childId,a.dayKey,day=>{ if(!day.firstAt) day.firstAt=a.createdAt; });
+      await txDone(tx);
+    });
+  }catch(e){ warn("problemShown",e); }
+};
+api.answerChecked=function(d){
+  try{
+    if(!A || !d) return;
+    if(d.cur && A.cur && d.cur!==A.cur){ warn("記録中の問題と画面の問題がちがうので記録しません"); return; }  // 取りちがえ防止
+    const a=A, now=pnow(), submitMs=Math.round(now-a.t0);
+    const isDiv=a.problem.calc.op==="div";
+    const raw1=d.a1==null ? "" : String(d.a1), raw2=d.a2==null ? "" : String(d.a2);
+    const correct=/(^|\s)good(\s|$)/.test(String(d.fb||""));   // 判定は書き直さず、画面に出た表示から読む
+    const dr=a.draft, keys=dr.keys;
+    const live=a.peeks.filter(p=>p.type==="liveMark");
+    const match=live.filter(p=>p.value===raw1 && (!isDiv || p.value2===raw2)).pop();
+    const solvedBefore=a.status==="correct";
+    const t={n:a.tries.length+1, startMs:dr.startMs, submitMs,
+      firstKeyMs:keys.length ? keys[0].atMs : null, lastKeyMs:keys.length ? keys[keys.length-1].atMs : null,
+      solveMs:submitMs-dr.startMs,
+      // answerRaw はどの単元でも文字1つ（わり算は「商あまり余り」、両方空なら ""）。欄ごとの文字は answerParts に
+      answerRaw:isDiv ? (raw1==="" && raw2==="" ? "" : raw1+"あまり"+raw2) : raw1,
+      answerParts:isDiv ? {q:raw1, r:raw2} : {value:raw1},
+      answer:isDiv ? {q:toNum(raw1), r:toNum(raw2)} : {value:toNum(raw1)},
+      correct, keys, deleteCount:dr.deleteCount, clearCount:dr.clearCount, keyCount:dr.keyCount,
+      liveMarkSeen:live.length>0,
+      liveMarkForSubmitted:match ? {mark:match.mark, at:match.at, atMs:match.atMs} : null,
+      afterModelShown:a.peeks.some(p=>p.type==="model"), afterFigure:a.peeks.some(p=>p.type==="figure"),
+      afterSolved:solvedBefore};
+    a.tries.push(t);
+    if(t.n===1) a.firstTryClean=a.peeks.length===0;
+    a.draft=newDraft(submitMs);
+    let dayFn=null;
+    if(correct && a.status==="in_progress"){ a.status="correct"; a.endedAt=iso(); a.endPerf=now; dayFn=day=>{ day.stars++; }; }
+    saveAttempt(a,dayFn,true);
+  }catch(e){ warn("answerChecked",e); }
+};
+function addLive(a,at,mk,ts,dedupe){
+  const isDiv=a.problem.calc.op==="div";
+  const v1=inputVal("prA1"), v2=inputVal("prA2");
+  const last=a.lastLive;
+  if(dedupe && last && last.value===v1 && (!isDiv || last.value2===v2) && last.mark===mk) return;
+  const p={type:"liveMark", at, value:v1, mark:mk, atMs:Math.round((ts==null ? pnow() : ts)-a.t0)};
+  if(isDiv) p.value2=v2;
+  a.peeks.push(p); a.lastLive=p;
+  saveAttempt(a);
+}
+/* 入力中の○×：今のプログラムの処理が終わってから読む。見える状態のときだけ */
+function checkLive(a,ts){
+  try{
+    if(a!==A) return;
+    const wrap=el("hwWrap"), markEl=el("hwCheckMark");
+    if(!wrap || !markEl) return;
+    if(wrap.style.display==="none" || !wrap.offsetParent) return;   // ① 手書き欄が表示されている
+    if(currentTab!=="pPractice") return;                            // ② れんしゅうタブ
+    if(document.visibilityState!=="visible") return;                // ③ 画面が隠れていない
+    const mk=markOf(markEl.textContent); if(!mk) return;            // ④ 空でない
+    addLive(a,"input",mk,ts,true);                                  // ⑤ 直前と同じなら足さない
+  }catch(e){ warn("live",e); }
+}
+function onKey(field){
+  return function(e){
+    try{
+      if(!A) return;
+      const a=A, dr=a.draft, val=String(e.target.value), prev=dr.prev[field], it=e.inputType||"";
+      dr.keys.push({k:"input", inputType:it, data:e.data==null ? null : e.data, field, valueAfter:val, atMs:Math.round(e.timeStamp-a.t0)});
+      if(it.indexOf("delete")===0){ dr.deleteCount++; if(val==="" && prev && prev.length>=2) dr.clearCount++; }
+      else if(it.indexOf("insert")===0) dr.keyCount++;
+      dr.prev[field]=val;
+      const ts=e.timeStamp;
+      setTimeout(()=>checkLive(a,ts),0);
+    }catch(err){ warn("input",err); }
+  };
+}
+const surfaceOf=(d,rev,atMs)=>{
+  const hw=(d && d.hw) || {}, full=hw.full||[], rowY=hw.rowY||[], cellH=hw.cellH||0;
+  const memoBands=[]; let y=0;
+  rowY.forEach(ry=>{ if(ry>y+0.5) memoBands.push({y, h:ry-y}); y=ry+cellH; });
+  return {surfaceRev:rev, surface:"hissan", openedMs:atMs,
+    cssW:parseFloat(d && d.w)||null, cssH:parseFloat(d && d.h)||null, dpr:(d && d.dpr)||window.devicePixelRatio||1,
+    cols:full.length ? Math.max.apply(null,full.map(l=>l.length)) : null, rows:full.length,
+    cellW:hw.cellW||null, cellH:cellH||null, memoH:memoBands.length ? memoBands[0].h : null,
+    rowY:rowY.slice(), memoBands, layoutVersion:0, orientation:mm("(orientation: portrait)") ? "portrait" : "landscape"};
+};
+api.hwOpened=function(d){
+  try{
+    if(!A) return;
+    const a=A, now=pnow(), atMs=Math.round(now-a.t0), rev=a.surfaces.length;
+    if(rev>0){ a.page++; a.canvasEvents.push({type:"reopen", surfaceRev:rev, page:a.page, atMs}); }
+    a.surfaces.push(surfaceOf(d,rev,atMs));
+    a.hwUsed=true;
+    hwOpenNow();
+    const mk=markOf(d && d.mark);
+    if(mk) addLive(a,"open",mk,now,false);      // 開いた瞬間に出た○×
+    else saveAttempt(a);
+  }catch(e){ warn("hwOpened",e); }
+};
+api.hwCleared=function(){
+  try{
+    if(!A) return;
+    const a=A; a.page++; a.counts.clears++;
+    a.canvasEvents.push({type:"clear", page:a.page, atMs:Math.round(pnow()-a.t0)});
+    saveAttempt(a);
+  }catch(e){ warn("hwCleared",e); }
+};
+api.modelShown=function(){
+  try{ if(!A) return; A.peeks.push({type:"model", atMs:Math.round(pnow()-A.t0)}); saveAttempt(A); }catch(e){ warn("modelShown",e); }
+};
+api.figureShown=function(){
+  try{ if(!A) return; A.peeks.push({type:"figure", atMs:Math.round(pnow()-A.t0)}); saveAttempt(A); }catch(e){ warn("figureShown",e); }
+};
+hiddenHooks.push(()=>{ if(hiddenSince==null) hiddenSince=pnow(); if(A) saveAttempt(A); });
+shownHooks.push(()=>{ if(A && A.endPerf==null && hiddenSince!=null) A.hiddenMs+=pnow()-Math.max(hiddenSince,A.t0); hiddenSince=null; });
+
+/* 見るだけのリスナー：入力欄とタブ（ページの動きは何も変えない） */
+(function(){
+  const a1=el("prA1"), a2=el("prA2");
+  if(a1) a1.addEventListener("input",onKey("q"),{passive:true});
+  if(a2) a2.addEventListener("input",onKey("r"),{passive:true});
+  const act=document.querySelector(".tab-btn.active");
+  currentTab=act && act.dataset ? act.dataset.p||null : null;
+  document.querySelectorAll(".tab-btn").forEach(b=>b.addEventListener("click",()=>{ currentTab=b.dataset.p||null; },{passive:true}));
+})();
+
+/* ---------- ステップ4：今の画面の筆跡の記録（strokes）— 見るだけ。描く処理には触らない ---------- */
+const INK={stillEps:0.004, stillKeepMs:250};    // inkRules の仮の値（ステップ0aの結果で直す）
+const track=new Map();                          // pointerId → 追っている接触
+let hwIsOpen=false, winOn=false;
+const r3=v=>Math.round(v*1000)/1000;
+function addPt(S,e,isEnd){
+  const c=el("hwDraw"); if(!c) return;
+  const r=c.getBoundingClientRect();
+  const x=r.width ? (e.clientX-r.left)/r.width : 0, y=r.height ? (e.clientY-r.top)/r.height : 0;
+  const t=Math.max(0,Math.round(e.timeStamp-S.down));
+  const last=S.last;
+  if(last && Math.hypot(x-last.x,y-last.y)<INK.stillEps){
+    if(isEnd) return;                                         // 離した点が最後の点と同じなら足さない
+    if(t-last.t<INK.stillKeepMs){ S.stillSkipped++; return; } // 止まっている間は stillKeepMs に1点だけ
+  }
+  S.pts.push(r3(x),r3(y),t);                     // はみ出しは丸めない
+  if(S.pressure) S.pressure.push(r3(e.pressure||0));
+  if(x<0 || x>1 || y<0 || y>1) S.oob=true;
+  S.last={x,y,t};
+}
+function sizeOf(S,e){ const w=+e.width||0, h=+e.height||0; if(w>S.maxW) S.maxW=w; if(h>S.maxH) S.maxH=h; }
+/* 触れ始めた場所の粗い区分：canvas（手書きのキャンバス）／button／input／hwWrap（手書き欄のそのほか）／question（問題の式）／other */
+function startedInOf(t){
+  const c=el("hwDraw"), w=el("hwWrap");
+  if(!t || !t.closest) return "other";
+  if(c && t===c) return "canvas";
+  if(t.closest("button,select,a,label")) return "button";
+  if(t.closest("input,textarea")) return "input";
+  if(w && w.contains(t)) return "hwWrap";
+  if(t.closest("#prQ")) return "question";
+  return "other";
+}
+function hwVisible(){ const w=el("hwWrap"); return !!(w && w.style.display!=="none" && w.offsetParent); }
+function onDown(e){
+  try{
+    if(!A || !hwIsOpen || !hwVisible()) return;             // 手書き欄が見えている間だけ
+    const t=e.target;
+    if(t && t.closest && t.closest("#sansuuLogDev")) return;  // 開発用の枠は数えない
+    const old=track.get(e.pointerId); if(old) endStroke(old,"cancel",e);
+    const a=A, where=startedInOf(t), idEl=t && t.closest ? t.closest("[id]") : null;
+    const S={id:uuid(), createdAt:iso(), a, down:e.timeStamp, startMs:Math.round(e.timeStamp-a.t0), seq:a.strokeSeq++,
+      tryN:a.tries.length+1, surfaceRev:a.surfaces.length-1, page:a.page,
+      pointerType:e.pointerType||"", pointerId:e.pointerId, isPrimary:!!e.isPrimary,
+      pts:[], pressure:e.pointerType==="pen" ? [] : null, maxW:0, maxH:0, stillSkipped:0, oob:false,
+      startedOutside:where!=="canvas", startedIn:where, startedOn:idEl ? idEl.id : null, last:null};
+    track.set(e.pointerId,S); sizeOf(S,e); addPt(S,e,false);
+  }catch(err){ warn("down",err); }
+}
+function onMove(e){ try{ const S=track.get(e.pointerId); if(!S) return; sizeOf(S,e); addPt(S,e,false); }catch(err){ warn("move",err); } }
+function onUp(e){ try{ const S=track.get(e.pointerId); if(!S) return; sizeOf(S,e); addPt(S,e,true); endStroke(S,"up",e); }catch(err){ warn("up",err); } }
+function onCancel(e){ try{ const S=track.get(e.pointerId); if(!S) return; endStroke(S,"cancel",e); }catch(err){ warn("cancel",err); } }
+function endStroke(S,by,e){
+  track.delete(S.pointerId);
+  const a=S.a, endTs=e ? e.timeStamp : pnow();
+  a.counts.contacts++; if(S.startedOutside) a.counts.outside++;
+  a.ptypes[S.pointerType]=(a.ptypes[S.pointerType]||0)+1;
+  const durationMs=Math.max(0,Math.round(endTs-S.down));
+  enqueue(async()=>{
+    const rec=base({id:S.id, createdAt:S.createdAt, attemptId:a.id, sessionId, seq:S.seq, tryN:S.tryN,
+      surface:"hissan", surfaceRev:S.surfaceRev, page:S.page, startMs:S.startMs, durationMs,
+      pointerType:S.pointerType, pointerId:S.pointerId, isPrimary:S.isPrimary, pts:S.pts, pressure:S.pressure,
+      contact:{maxW:Math.round(S.maxW*10)/10, maxH:Math.round(S.maxH*10)/10, sizeReported:S.maxW>1 || S.maxH>1},
+      stillSkipped:S.stillSkipped, oob:S.oob, startedOutside:S.startedOutside, startedIn:S.startedIn, startedOn:S.startedOn,
+      display:{shown:null, reason:"legacy", rulesVersion:0, grantedAtMs:null, revokedAtMs:null}, endedBy:by});
+    const tx=db.transaction(["strokes","attempts","days"],"readwrite");
+    tx.objectStore("strokes").put(rec);
+    await putAttemptTx(tx,a,null);
+    await txDone(tx);
+  });
+}
+function hwOpenNow(){
+  hwIsOpen=true;
+  if(winOn) return;
+  // 手書き欄が開いている間は、ページ全体の接触を見る（見るだけ。capture は「先に見る」だけで、止めたり変えたりしない）
+  window.addEventListener("pointerdown",onDown,{passive:true, capture:true});
+  window.addEventListener("pointermove",onMove,{passive:true});
+  window.addEventListener("pointerup",onUp,{passive:true});
+  window.addEventListener("pointercancel",onCancel,{passive:true});
+  winOn=true;
+}
+function closeHw(by){
+  Array.from(track.values()).forEach(S=>endStroke(S,by||"closed",null));
+  hwIsOpen=false;
+  if(!winOn) return;
+  window.removeEventListener("pointerdown",onDown,{passive:true, capture:true});
+  window.removeEventListener("pointermove",onMove,{passive:true});
+  window.removeEventListener("pointerup",onUp,{passive:true});
+  window.removeEventListener("pointercancel",onCancel,{passive:true});
+  winOn=false;
+}
+hiddenHooks.unshift(()=>{ Array.from(track.values()).forEach(S=>endStroke(S,"pagehide",null)); });
+(function(){
+  try{
+    const q=matchMedia("(orientation: portrait)");
+    const f=()=>{ try{ if(!A) return; A.canvasEvents.push({type:"orientation", value:q.matches ? "portrait" : "landscape", atMs:Math.round(pnow()-A.t0)}); saveAttempt(A); }catch(e){ warn("orientation",e); } };
+    if(q.addEventListener) q.addEventListener("change",f); else if(q.addListener) q.addListener(f);
+  }catch(_){}
+})();
+
+/* DEV-PANEL-START */
+/* ---------- ステップ5：開発用の再生と書き出し（?dev=1 のときだけ画面に足す） ---------- */
+const EXPORT_STORES=["sessions","days","attempts","strokes","labels","reviewItems","deletions","settings","meta"];
+async function buildExport(){
+  if(!(await ready) || !db) throw new Error("DB が使えません");
+  await api.whenIdle();
+  const tx=db.transaction(EXPORT_STORES,"readonly");
+  const parts={}, counts={}, vers=new Set();
+  EXPORT_STORES.forEach(n=>{ parts[n]=[]; counts[n]=0; });
+  await Promise.all(EXPORT_STORES.map(n=>new Promise((res,rej)=>{
+    const rq=tx.objectStore(n).openCursor();          // 1件ずつ読んで組み立てる
+    rq.onsuccess=()=>{
+      const cur=rq.result; if(!cur){ res(); return; }
+      let v=cur.value;
+      if(n==="settings" && v.name==="parentPin"){ cur.continue(); return; }   // 暗証番号は入れない
+      if(n==="settings" && v.name==="sheetSync"){ v=JSON.parse(JSON.stringify(v)); if(v.value) v.value.url=""; } // スプシURLは入れない
+      if(typeof v.v==="number") vers.add(v.v);
+      parts[n].push(JSON.stringify(v)); counts[n]++;
+      cur.continue();
+    };
+    rq.onerror=()=>rej(rq.error);
+  })));
+  const exportId=uuid(), exportedAt=iso(), range={all:true};
+  const head={format:"sansuu-log-export", formatVersion:1, kind:"backup", exportId, exportedAt,
+    appVersion:APP_VERSION, buildHash, schemaVersions:Array.from(vers).sort(), range, counts,
+    subject:{childId:ident.childId, deviceId:ident.deviceId}};
+  const pieces=[JSON.stringify(head).slice(0,-1), ',"data":{'];
+  EXPORT_STORES.forEach((n,i)=>{
+    pieces.push((i ? "," : "")+JSON.stringify(n)+":[");
+    parts[n].forEach((s,j)=>pieces.push((j ? "," : "")+s));
+    pieces.push("]");
+  });
+  pieces.push("}}");
+  const blob=new Blob(pieces,{type:"application/json"});
+  const d=new Date();
+  const fileName="sansuu-log-backup-"+d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())+"-"+pad(d.getHours())+pad(d.getMinutes())+".json";
+  await enqueue(async()=>{
+    const t2=db.transaction("exports","readwrite");
+    t2.objectStore("exports").put(base({id:exportId, createdAt:exportedAt, kind:"backup", exportedAt, range, counts, fileName, bytes:blob.size}));
+    await txDone(t2);
+  });
+  return {blob, fileName, counts};
+}
+async function loadForReplay(id){
+  const tx=db.transaction(["attempts","strokes"],"readonly");
+  const a=await req(tx.objectStore("attempts").get(id));
+  const st=await req(tx.objectStore("strokes").index("by_attempt_seq").getAll(IDBKeyRange.bound([id,-Infinity],[id,Infinity])));
+  return {a, st};
+}
+function buildDevPanel(){
+  const mk=(tag,css,text)=>{ const e=document.createElement(tag); if(css) e.setAttribute("style",css); if(text!=null) e.textContent=text; return e; };
+  const btnCss="font:inherit;font-size:12px;padding:4px 8px;margin:2px;border:1px solid #8A6FBF;border-radius:6px;background:#fff;cursor:pointer";
+  const box=mk("div","position:fixed;right:8px;bottom:8px;z-index:2147483000;width:340px;max-height:75vh;overflow:auto;background:#fff;border:2px solid #8A6FBF;border-radius:10px;padding:6px 8px;font:12px/1.5 sans-serif;color:#333;box-shadow:0 2px 10px rgba(0,0,0,.25)");
+  box.id="sansuuLogDev";
+  const head=mk("div","font-weight:bold;display:flex;align-items:center;gap:4px","開発用（?dev=1）");
+  const fold=mk("button",btnCss+";margin-left:auto","たたむ");
+  head.appendChild(fold); box.appendChild(head);
+  const body=mk("div"); box.appendChild(body);
+  fold.addEventListener("click",()=>{ const h=body.style.display==="none"; body.style.display=h ? "" : "none"; fold.textContent=h ? "たたむ" : "ひらく"; });
+  const row1=mk("div");
+  const bList=mk("button",btnCss,"一覧を更新"), bExp=mk("button",btnCss,"書き出し（バックアップ形式）");
+  bList.id="sldRefresh"; bExp.id="sldExport";
+  row1.appendChild(bList); row1.appendChild(bExp); body.appendChild(row1);
+  const sel=mk("select","width:100%;font:inherit;font-size:12px"); sel.size=6; sel.id="sldList"; body.appendChild(sel);
+  const row2=mk("div");
+  const bPlay=mk("button",btnCss,"再生"), speed=mk("select","font:inherit;font-size:12px");
+  bPlay.id="sldPlay"; speed.id="sldSpeed";
+  [["1","1倍"],["2","2倍"],["4","4倍"],["16","16倍"]].forEach(([v,t])=>{ const o=mk("option",null,t); o.value=v; speed.appendChild(o); });
+  row2.appendChild(bPlay); row2.appendChild(speed); body.appendChild(row2);
+  const cv=mk("canvas","display:block;border:1px solid #ccc;background:#FAFAF5;margin:4px 0"); cv.id="sldCanvas"; cv.width=320; cv.height=200;
+  body.appendChild(cv);
+  body.appendChild(mk("div","font-size:11px","■黒：手書き欄の中で始まった接触（今の描き方＝legacy）　■橙：手書き欄の外で始まった接触　点線：手書き欄のわく"));
+  const status=mk("div","font-size:11px;color:#555;white-space:pre-wrap"); status.id="sldStatus"; body.appendChild(status);
+  document.body.appendChild(box);
+
+  async function refresh(){
+    try{
+      if(!(await ready)) { status.textContent="DB が使えません"; return; }
+      await api.whenIdle();
+      const tx=db.transaction("attempts","readonly");
+      const list=await req(tx.objectStore("attempts").index("by_createdAt").getAll());
+      list.reverse();                                   // 新しい順
+      sel.textContent="";
+      list.forEach(a=>{
+        const o=mk("option",null,a.createdAt.slice(5,19).replace("T"," ")+"  "+a.problem.presentation.text+"  "+a.status+"  接触"+((a.counts&&a.counts.contacts)||0));
+        o.value=a.id; sel.appendChild(o);
+      });
+      if(list.length && !sel.value) sel.selectedIndex=0;
+      status.textContent="問題 "+list.length+"件";
+    }catch(e){ status.textContent="一覧エラー："+(e&&e.message); }
+  }
+  let playing=0;
+  async function play(){
+    const id=sel.value; if(!id) return;
+    const my=++playing; box.dataset.playState="playing";
+    const {a,st}=await loadForReplay(id);
+    st.sort((x,y)=>x.seq-y.seq);
+    const surfaces=(a && a.inputEnv && a.inputEnv.surfaces) || [];
+    const W=320, ctx=cv.getContext("2d");
+    // 見える範囲：手書き欄（0〜1）と、はみ出した点の全部（外で始まった接触も見えるように）
+    let x0=0, x1=1, y0=0, y1=1;
+    st.forEach(s=>{ for(let i=0;i<s.pts.length;i+=3){ x0=Math.min(x0,s.pts[i]); x1=Math.max(x1,s.pts[i]); y0=Math.min(y0,s.pts[i+1]); y1=Math.max(y1,s.pts[i+1]); } });
+    x0=Math.max(-2,x0); x1=Math.min(3,x1); y0=Math.max(-2,y0); y1=Math.min(3,y1);
+    let curRev=null, curPage=null, H=200;
+    const X=v=>(v-x0)/(x1-x0)*W, Y=v=>(v-y0)/(y1-y0)*H;
+    const frameBox=()=>{ ctx.save(); ctx.strokeStyle="#9BB"; ctx.lineWidth=1; ctx.setLineDash([4,3]); ctx.strokeRect(X(0)+0.5,Y(0)+0.5,X(1)-X(0)-1,Y(1)-Y(0)-1); ctx.restore(); };
+    const setSurface=rev=>{
+      const s=surfaces[rev]||surfaces[0]||{cssW:1,cssH:1};
+      const ratio=((y1-y0)*(s.cssH||1))/((x1-x0)*(s.cssW||1));
+      H=Math.max(40,Math.min(1200,Math.round(W*ratio)));
+      cv.width=W; cv.height=H; ctx.lineCap="round"; ctx.lineJoin="round"; ctx.lineWidth=3;
+      box.dataset.view=JSON.stringify({x0,x1,y0,y1,W,H});
+      frameBox();
+    };
+    const segs=[];
+    st.forEach(s=>{ for(let i=0;i<s.pts.length;i+=3) segs.push({time:s.startMs+s.pts[i+2], s, i}); });
+    segs.sort((x,y)=>x.time-y.time || x.s.seq-y.s.seq || x.i-y.i);
+    const t0=segs.length ? segs[0].time : 0, sp=+speed.value||1, start=performance.now();
+    let k=0;
+    setSurface(st.length ? st[0].surfaceRev : 0);
+    status.textContent="再生中… 接触 "+st.length+"件";
+    await new Promise(done=>{
+      const frame=()=>{
+        if(my!==playing){ done(); return; }
+        const el2=(performance.now()-start)*sp+t0;
+        while(k<segs.length && segs[k].time<=el2){
+          const g=segs[k++], s=g.s;
+          if(s.surfaceRev!==curRev){ curRev=s.surfaceRev; setSurface(curRev); curPage=s.page; }
+          else if(s.page!==curPage){ curPage=s.page; ctx.clearRect(0,0,W,H); frameBox(); }   // けした・開き直した
+          ctx.strokeStyle=ctx.fillStyle=s.startedOutside ? "#E67E22" : "#222";
+          const x=X(s.pts[g.i]), y=Y(s.pts[g.i+1]);
+          if(g.i===0){ ctx.beginPath(); ctx.arc(x,y,2,0,Math.PI*2); ctx.fill(); }
+          else{ ctx.beginPath(); ctx.moveTo(X(s.pts[g.i-3]),Y(s.pts[g.i-2])); ctx.lineTo(x,y); ctx.stroke(); }
+        }
+        if(k>=segs.length){ done(); return; }
+        requestAnimationFrame(frame);
+      };
+      requestAnimationFrame(frame);
+    });
+    if(my===playing){ box.dataset.playState="done"; status.textContent="再生おわり：接触 "+st.length+"件（外で始まった "+st.filter(s=>s.startedOutside).length+"件）"; }
+  }
+  async function doExport(){
+    try{
+      status.textContent="書き出し中…";
+      const {blob,fileName,counts}=await buildExport();
+      const url=URL.createObjectURL(blob), link=mk("a","display:none");
+      link.href=url; link.download=fileName; box.appendChild(link); link.click();
+      setTimeout(()=>{ URL.revokeObjectURL(url); link.remove(); },60000);
+      status.textContent="書き出しました："+fileName+"（"+blob.size+"バイト）\n"+JSON.stringify(counts);
+    }catch(e){ status.textContent="書き出しエラー："+(e&&e.message); }
+  }
+  bList.addEventListener("click",refresh);
+  bPlay.addEventListener("click",()=>{ play().catch(e=>{ status.textContent="再生エラー："+(e&&e.message); }); });
+  bExp.addEventListener("click",doExport);
+  refresh();
+}
+if(FLAGS.dev) domReady.then(()=>{ try{ buildDevPanel(); }catch(e){ warn("dev",e); } });
+/* DEV-PANEL-END */
+
+ready=(async()=>{
+  await domReady;
+  buildHash=await computeBuildHash();
+  db=await openDB();
+  ident=await ensureIdentity();
+  await ensureMetaCreated();
+  SESSION.buildHash=buildHash;
+  await uaDataP;
+  await writeSessionNow();                      // buildHash の計算が終わってから sessions を作る
+  return true;
+})().catch(e=>{ warn("記録なしで動きます",e); return false; });
+ready.then(ok=>{ if(!ok) return;
+  probeStorage().catch(e=>warn("storage",e));
+  enqueue(markAbandoned);
+});
+
+})();
+</script>
+<script>
+"use strict";
+const $ = (id)=>document.getElementById(id);
+const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+function LOG(name,data){ try{ const L=window.sansuuLog; if(L && typeof L[name]==="function") L[name](data); }catch(_){} } // 学習ログを呼ぶ（記録がなくても・こわれていても今の処理は止まらない）
+function setPulse(panelId, btnId){
+  document.querySelectorAll("#"+panelId+" .pulse").forEach(b=>b.classList.remove("pulse"));
+  if(btnId) $(btnId).classList.add("pulse");
+}
+
+/* ---------- タブ ---------- */
+document.querySelectorAll(".tab-btn").forEach(b=>{
+  b.addEventListener("click",()=>{
+    document.querySelectorAll(".tab-btn").forEach(x=>x.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(x=>x.classList.remove("active"));
+    b.classList.add("active");
+    $(b.dataset.p).classList.add("active");
+  });
+});
+
+/* ---------- ＋−ボタン ---------- */
+document.querySelectorAll("[data-step]").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    const [id,delta]=btn.dataset.step.split(":");
+    const inp=$(id);
+    const min=+inp.min, max=+inp.max;
+    let v=(+inp.value||min)+(+delta);
+    v=Math.min(max,Math.max(min,v));
+    inp.value=v;
+  });
+});
+
+/* ---------- かけ算（面積図） ---------- */
+const mult = { a:23, b:4, step:0, maxStep:3 };
+
+function multParts(n){
+  if(n>=100){
+    const h=Math.floor(n/100)*100, t=Math.floor((n%100)/10)*10, o=n%10;
+    return [{v:h},{v:t},{v:o}].filter(p=>p.v>0);
+  }
+  if(n>=10){
+    const t=Math.floor(n/10)*10, o=n%10;
+    return [{v:t},{v:o}].filter(p=>p.v>0);
+  }
+  return [{v:n}];
+}
+function scaleSizes(parts,total){
+  const sum = parts.reduce((s,p)=>s+p.v,0);
+  const min = 76, rest = Math.max(0,total - min*parts.length);
+  return parts.map(p=>min + rest*(p.v/sum));
+}
+const colA=["#FFE1B8","#CFE9F7","#D9F0DC"], colB=["#FFF1DC","#E9F6FD","#EDF8EE"];
+function cellColor(i,j){ return (j%2===0?colA:colB)[Math.min(i,2)]; }
+
+function multRender(){
+  const a=mult.a, b=mult.b, s=mult.step;
+  const pa=multParts(a), pb=multParts(b);
+  const W=440, H=250, ox=100, oy=60;
+  const ws=scaleSizes(pa,W), hs=scaleSizes(pb,H);
+  let svg="";
+  svg+=`<rect x="${ox}" y="${oy}" width="${W}" height="${H}" fill="#fff" stroke="#3A3A3A" stroke-width="3" rx="4"/>`;
+  svg+=`<text x="${ox+W/2}" y="${oy-34}" text-anchor="middle" font-size="22" font-weight="900">よこ ${a}</text>`;
+  svg+=`<text x="${ox-64}" y="${oy+H/2}" text-anchor="middle" font-size="22" font-weight="900" transform="rotate(-90 ${ox-64} ${oy+H/2})">たて ${b}</text>`;
+  if(s>=1){
+    let y=oy;
+    pb.forEach((p,j)=>{
+      let x=ox;
+      pa.forEach((q,i)=>{
+        svg+=`<rect x="${x+2}" y="${y+2}" width="${ws[i]-4}" height="${hs[j]-4}" fill="${cellColor(i,j)}" opacity="0.9"/>`;
+        if(s>=2){
+          const fs = pa.length>=3 ? 14 : 17;
+          svg+=`<text x="${x+ws[i]/2}" y="${y+hs[j]/2-4}" text-anchor="middle" font-size="${fs}" font-weight="700">${q.v}×${p.v}</text>`;
+          svg+=`<text x="${x+ws[i]/2}" y="${y+hs[j]/2+18}" text-anchor="middle" font-size="${fs+3}" font-weight="900">=${q.v*p.v}</text>`;
+        }
+        x+=ws[i];
+      });
+      y+=hs[j];
+    });
+    svg+=`<rect x="${ox}" y="${oy}" width="${W}" height="${H}" fill="none" stroke="#3A3A3A" stroke-width="3" rx="4"/>`;
+    let x2=ox;
+    pa.forEach((q,i)=>{
+      svg+=`<text x="${x2+ws[i]/2}" y="${oy-12}" text-anchor="middle" font-size="18" font-weight="900" fill="#C7860F">${q.v}</text>`;
+      x2+=ws[i];
+      if(i<pa.length-1) svg+=`<line x1="${x2}" y1="${oy}" x2="${x2}" y2="${oy+H}" stroke="#3A3A3A" stroke-width="2" stroke-dasharray="7 5"/>`;
+    });
+    let y2=oy;
+    pb.forEach((p,j)=>{
+      svg+=`<text x="${ox-24}" y="${y2+hs[j]/2+7}" text-anchor="middle" font-size="18" font-weight="900" fill="#2B85AD">${p.v}</text>`;
+      y2+=hs[j];
+      if(j<pb.length-1) svg+=`<line x1="${ox}" y1="${y2}" x2="${ox+W}" y2="${y2}" stroke="#3A3A3A" stroke-width="2" stroke-dasharray="7 5"/>`;
+    });
+  }
+  if(s>=3){
+    const prods=[]; pb.forEach(p=>pa.forEach(q=>prods.push(q.v*p.v)));
+    const eq = prods.join("+")+"="+(a*b);
+    const fs = eq.length>30 ? 16 : 20;
+    svg+=`<text x="${ox+W/2}" y="${oy+H+40}" text-anchor="middle" font-size="${fs}" font-weight="900" fill="#2E7A40">${eq}</text>`;
+  }
+  $("mSvg").innerHTML=svg;
+
+  const nRooms = pa.length*pb.length;
+  const guides=[
+    `${a} × ${b} は、「たて ${b}・よこ ${a} の長方形の広さ」と おなじだよ。この形で考えてみよう。`,
+    `よこの ${a} を くらいごとに分けるよ${b>=10?`。たての ${b} も分けるよ`:""}。大きい数は「分ける」と かんたんになる！ 部屋は ${nRooms}こに 分かれたね。`,
+    `分けた部屋ごとに かけ算するよ。どの部屋も 九九と 10や100のかけ算で できるね。`,
+    `部屋のこたえを ぜんぶ たすと…… ${a} × ${b} = ${a*b}！ 筆算も 同じことを しているんだよ。`
+  ];
+  $("mGuide").textContent = "ステップ" + (s+1) + "：" + guides[s];
+  $("mDots").textContent = (s+1) + " / 4";
+
+  let h=" ";
+  if(s>=3){
+    const W2 = Math.max(String(a*b).length, String(a).length, String(b).length+1)+2;
+    const P=(n,w)=>String(n).padStart(w," ");
+    if(b<10){
+      h = P(a,W2)+"\n×"+P(b,W2-1)+"\n"+"─".repeat(W2)+"\n"+P(a*b,W2);
+    }else{
+      const p1=a*(b%10), p2=a*Math.floor(b/10);
+      h = P(a,W2)+"\n×"+P(b,W2-1)+"\n"+"─".repeat(W2)+"\n"+P(p1,W2)+"\n"+P(p2,W2-1)+" \n"+"─".repeat(W2)+"\n"+P(a*b,W2);
+    }
+  }
+  $("mHissan").textContent=h;
+  const ab=$("mAns");
+  if(s>=3){ ab.style.display="block"; ab.textContent=`こたえ： ${a} × ${b} = ${a*b} 🎉`; }
+  else ab.style.display="none";
+  setPulse("pMult", s<mult.maxStep ? "mNext" : "mG2");
+}
+function multSet(a,b){
+  a=Math.min(999,Math.max(10,Math.floor(a)||23));
+  b=Math.min(99,Math.max(2,Math.floor(b)||4));
+  mult.a=a; mult.b=b; mult.step=0;
+  $("mA").value=a; $("mB").value=b;
+  multRender();
+}
+$("mGo").addEventListener("click",()=>multSet(+$("mA").value,+$("mB").value));
+$("mNext").addEventListener("click",()=>{ if(mult.step<mult.maxStep){mult.step++; multRender();} });
+$("mPrev").addEventListener("click",()=>{ if(mult.step>0){mult.step--; multRender();} });
+$("mG2").addEventListener("click",()=>multSet(ri(12,99), Math.random()<0.5?ri(2,9):ri(12,99)));
+$("mG3").addEventListener("click",()=>multSet(ri(112,987), Math.random()<0.5?ri(2,9):ri(12,99)));
+
+/* ==================================================
+   わり算：ブロックを自分でくばる（ドラッグ操作）
+   ================================================== */
+const UNIT_TYPES3=["flat","rod","cube"], UNIT_TYPES2=["rod","cube"];
+
+function computeDiv(d,v){
+  const ds=String(d).split("").map(Number), L=ds.length;
+  const qd=[],sub=[],remA=[];
+  let rem=0;
+  for(let i=0;i<L;i++){ const cur=rem*10+ds[i]; qd[i]=Math.floor(cur/v); sub[i]=qd[i]*v; rem=cur-sub[i]; remA[i]=rem; }
+  let f=0; while(f<L-1 && qd[f]===0) f++;
+  return {ds,L,qd,sub,remA,f,r:rem,q:parseInt(qd.join(""),10)};
+}
+function divHissanTxt(M,v,revealPlace,broughtUpTo){
+  const {ds,L,qd,sub,remA,f}=M;
+  const lines=[];
+  let qs="";
+  for(let i=0;i<L;i++) qs += (i<f? " " : (revealPlace>=i? String(qd[i]) : " "));
+  lines.push("  "+qs);
+  lines.push(v+")"+ds.join(""));
+  for(let i=f;i<=revealPlace && i<L;i++){
+    if(qd[i]===0) continue;
+    lines.push(String(sub[i]).padStart(i+3," "));
+    lines.push("  "+"─".repeat(L));
+    let diff=String(remA[i]).padStart(i+3," ");
+    let j=i+1;
+    while(j<=broughtUpTo && j<L){
+      diff+=String(ds[j]);
+      if(qd[j]!==0) break;
+      j++;
+    }
+    lines.push(diff);
+  }
+  return lines.join("\n");
+}
+
+const dv = { d:72, v:3, M:null, phase:0, brought:0, finished:false, units:UNIT_TYPES2 };
+const UNIT_LABEL={flat:"100のシート",rod:"10のたば",cube:"1"};
+
+function makeBlk(type){
+  const e=document.createElement("div");
+  e.className="blk "+type;
+  if(type==="flat") e.textContent="100";
+  else if(type==="rod") e.textContent="10";
+  return e;
+}
+function addBlks(zone,type,n){ for(let i=0;i<n;i++) zone.appendChild(makeBlk(type)); }
+function countIn(zone,type){ return zone.querySelectorAll("."+type).length; }
+function groupZones(){ return Array.from(document.querySelectorAll('#groups [data-zone="group"]')); }
+
+function divSet(d,v){
+  d=Math.min(999,Math.max(10,Math.floor(d)||72));
+  v=Math.min(9,Math.max(2,Math.floor(v)||3));
+  dv.d=d; dv.v=v; dv.M=computeDiv(d,v);
+  dv.units = dv.M.L===3 ? UNIT_TYPES3 : UNIT_TYPES2;
+  dv.phase=0; dv.brought=0; dv.finished=false;
+  $("dD").value=d; $("dV").value=v;
+
+  const tray=$("tray"); tray.innerHTML="";
+  dv.units.forEach((u,i)=>addBlks(tray,u,dv.M.ds[i]));
+
+  const gw=$("groups"); gw.innerHTML="";
+  for(let k=0;k<v;k++){
+    const g=document.createElement("div"); g.className="group-box";
+    g.innerHTML=`<div class="g-label">${k+1}人め</div><div class="blocks" data-zone="group"></div><div class="g-count"></div>`;
+    gw.appendChild(g);
+  }
+  $("dAns").style.display="none";
+  divUpdate();
+}
+
+function divUpdate(){
+  const M=dv.M, v=dv.v, tray=$("tray"), gzs=groupZones();
+  const p=dv.phase, unit=dv.units[p];
+  const trayN=countIn(tray,unit);
+  const gArr=gzs.map(z=>countIn(z,unit));
+  const equal=gArr.every(x=>x===gArr[0]);
+  const canDeal = trayN>=v;
+  const complete = !canDeal && equal && !dv.finished;
+
+  document.querySelectorAll("#pDiv .blk").forEach(b=>{
+    const isCurrent = b.classList.contains(unit);
+    b.classList.toggle("locked", dv.finished || !isCurrent);
+  });
+
+  gzs.forEach((z,k)=>{
+    const cnt=z.parentElement.querySelector(".g-count");
+    const parts=dv.units.map(u=>{ const n=countIn(z,u); return n>0?`${UNIT_LABEL[u]}×${n}`:null; }).filter(Boolean);
+    cnt.textContent = parts.length? parts.join("　") : "まだ 0こ";
+  });
+
+  const trayParts=dv.units.map(u=>{ const n=countIn(tray,u); return n>0?`${UNIT_LABEL[u]}×${n}`:null; }).filter(Boolean);
+  $("trayLabel").textContent = "くばる前の おきば　" + (trayParts.length? "のこり：" + trayParts.join("　") : "のこり：0こ");
+  tray.classList.toggle("dense", tray.querySelectorAll(".blk").length>22);
+  gzs.forEach(z=>z.classList.toggle("dense", z.querySelectorAll(".blk").length>10));
+
+  const dealBtn=$("dDeal"), phBtn=$("dPhase");
+  let guide="";
+  if(dv.finished){
+    guide = dv.M.r>0
+      ? `かんせい！ 1人分は ${M.q}こ。くばれずに のこった ${M.r}こが「あまり」だよ。`
+      : `かんせい！ 1人分は ${M.q}こ。ぴったり 分けられたね！`;
+    dealBtn.style.display="none"; phBtn.style.display="none";
+  }else if(complete){
+    const per=gArr[0];
+    if(p<dv.M.L-1){
+      if(trayN>0){
+        guide = per>0
+          ? `${UNIT_LABEL[unit]}は 1人 ${per}こずつ くばれたね！ のこりの ${trayN}こは みんなに くばれないから、「ばらす」を おそう。`
+          : `${UNIT_LABEL[unit]}（${trayN}こ）は ${v}人に くばれないね。「ばらす」を おして 小さくしよう。`;
+        phBtn.textContent="🔨 ばらす";
+      }else{
+        guide = per>0
+          ? `${UNIT_LABEL[unit]}は 1人 ${per}こずつ、のこりなく くばれた！「つぎへ」を おそう。`
+          : `${UNIT_LABEL[unit]}は 0こ。商の このくらいは 0 だよ。「つぎへ」を おそう。`;
+        phBtn.textContent="➡ つぎへ";
+      }
+      phBtn.style.display="inline-block"; dealBtn.style.display="none";
+    }else{
+      guide = `${UNIT_LABEL[unit]}も くばりおわり！「できあがり」を おそう。`;
+      phBtn.textContent="🎉 できあがり"; phBtn.style.display="inline-block"; dealBtn.style.display="none";
+    }
+  }else if(!canDeal && !equal){
+    guide = `みんな おなじ数に なってるかな？ 多い人の ${UNIT_LABEL[unit]}を 少ない人へ ドラッグして うごかそう。`;
+    dealBtn.style.display="none"; phBtn.style.display="none";
+  }else{
+    guide = `${UNIT_LABEL[unit]}を ドラッグして、${v}人に 1こずつ じゅんばんに くばろう！（おきばに のこり ${trayN}こ）　※いそぐときは ⚡ボタンでも くばれるよ`;
+    dealBtn.style.display="inline-block"; phBtn.style.display="none";
+  }
+  $("dGuide").textContent=guide;
+
+  const revealPlace = complete||dv.finished ? p : p-1;
+  $("dHissan").textContent = revealPlace<0 && dv.brought<1
+    ? "  "+" ".repeat(M.L)+"\n"+v+")"+M.ds.join("")
+    : divHissanTxt(M,v,Math.max(revealPlace, dv.phase-1),dv.brought);
+
+  const trayBox=tray.parentElement;
+  trayBox.classList.toggle("amari", dv.finished && M.r>0);
+  const ab=$("dAns");
+  if(dv.finished){
+    ab.style.display="block";
+    ab.textContent=`こたえ： ${dv.d} ÷ ${dv.v} = ${M.q}`+(M.r>0?` あまり ${M.r}`:"")+" 🎉";
+  }
+  setPulse("pDiv", dv.finished ? "dG2" : (complete ? "dPhase" : null));
+}
+
+$("dPhase").addEventListener("click",()=>{
+  const p=dv.phase, unit=dv.units[p], tray=$("tray");
+  if(p<dv.M.L-1){
+    const left=countIn(tray,unit);
+    tray.querySelectorAll("."+unit).forEach(b=>b.remove());
+    addBlks(tray, dv.units[p+1], left*10);
+    dv.brought=p+1;
+    dv.phase=p+1;
+  }else{
+    dv.finished=true;
+  }
+  divUpdate();
+});
+
+$("dDeal").addEventListener("click",()=>{
+  const unit=dv.units[dv.phase], tray=$("tray");
+  if(countIn(tray,unit)<dv.v) return;
+  groupZones().forEach(z=>{
+    const b=tray.querySelector("."+unit);
+    if(b) z.appendChild(b);
+  });
+  divUpdate();
+});
+
+$("dReset").addEventListener("click",()=>divSet(dv.d,dv.v));
+$("dGo").addEventListener("click",()=>divSet(+$("dD").value,+$("dV").value));
+$("dG2").addEventListener("click",()=>{ const p=makeProblem(Math.random()<0.5?"d0":"d1"); divSet(p.d,p.v); });
+$("dG3").addEventListener("click",()=>{ const p=makeProblem(Math.random()<0.5?"d2":"d3"); divSet(p.d,p.v); });
+
+/* ---------- ドラッグ（マウス・タッチ両対応） ---------- */
+let drag=null;
+document.getElementById("pDiv").addEventListener("pointerdown",(e)=>{
+  const el=e.target.closest(".blk");
+  if(!el || drag) return;
+  if(el.classList.contains("locked")){
+    if(!dv.finished){
+      $("dGuide").textContent="まずは いま くばっている「"+UNIT_LABEL[dv.units[dv.phase]]+"」から うごかそう！";
+    }
+    return;
+  }
+  e.preventDefault();
+  const r=el.getBoundingClientRect();
+  const clone=el.cloneNode(true);
+  clone.classList.add("drag-clone");
+  clone.classList.remove("ghost","locked");
+  clone.style.width=r.width+"px";
+  clone.style.height=r.height+"px";
+  document.body.appendChild(clone);
+  drag={el,clone,dx:e.clientX-r.left,dy:e.clientY-r.top,over:null};
+  el.classList.add("ghost");
+  positionClone(e);
+  window.addEventListener("pointermove",onDragMove);
+  window.addEventListener("pointerup",onDragUp,{once:true});
+  window.addEventListener("pointercancel",onDragUp,{once:true});
+});
+function positionClone(e){
+  drag.clone.style.left=(e.clientX-drag.dx)+"px";
+  drag.clone.style.top=(e.clientY-drag.dy)+"px";
+}
+function zoneAt(x,y){
+  const el=document.elementFromPoint(x,y);
+  if(!el) return null;
+  return el.closest("[data-zone]");
+}
+function onDragMove(e){
+  positionClone(e);
+  const z=zoneAt(e.clientX,e.clientY);
+  if(drag.over && drag.over!==z) drag.over.classList.remove("over");
+  if(z && z!==drag.el.parentElement){ z.classList.add("over"); }
+  drag.over=z;
+}
+function onDragUp(e){
+  window.removeEventListener("pointermove",onDragMove);
+  const z=zoneAt(e.clientX,e.clientY);
+  document.querySelectorAll(".blocks.over").forEach(x=>x.classList.remove("over"));
+  drag.el.classList.remove("ghost");
+  if(z && z!==drag.el.parentElement){ z.appendChild(drag.el); }
+  drag.clone.remove();
+  drag=null;
+  divUpdate();
+}
+
+/* ==================================================
+   たし算・ひき算（くり上がり・くり下がりを見る）
+   ================================================== */
+function digitsLow(n,L){ const arr=[]; for(let i=0;i<L;i++){ arr.push(n%10); n=Math.floor(n/10);} return arr; }
+const PLACE_NAME=["1","10のたば","100のシート"];
+const PLACE_TYPE=["cube","rod","flat"];
+
+function blocksRow(label,countsLow){
+  const row=document.createElement("div"); row.className="as-row";
+  const lab=document.createElement("div"); lab.className="tray-label"; lab.textContent=label;
+  const bl=document.createElement("div"); bl.className="blocks";
+  for(let i=countsLow.length-1;i>=0;i--){
+    for(let k=0;k<countsLow[i];k++) bl.appendChild(makeBlk(PLACE_TYPE[i]));
+  }
+  bl.classList.toggle("dense", countsLow.reduce((s,n)=>s+n,0)>22);
+  row.appendChild(lab); row.appendChild(bl);
+  return row;
+}
+
+function buildAdd(a,b){
+  const sum=a+b, L=String(sum).length;
+  const UN=i=>PLACE_NAME[i];
+  const ca=digitsLow(a,L), cb=digitsLow(b,L), sd=digitsLow(sum,L);
+  const steps=[];
+  const caRem=ca.slice(), cbRem=cb.slice();
+  const res=new Array(L).fill(0);
+  const carriesInto=new Array(L+1).fill(false);
+  steps.push({rows:[[`「${a}」の ブロック`,ca.slice()],[`「${b}」の ブロック`,cb.slice()]],
+    guide:`${a} ＋ ${b} を やるよ。2つの数を ブロックで ならべた！ 小さいくらい（1）から じゅんばんに あわせよう。`,
+    fill:-1});
+  let carry=0;
+  for(let i=0;i<L;i++){
+    const da=caRem[i], db=cbRem[i], had=carry;
+    const t=da+db+had;
+    caRem[i]=0; cbRem[i]=0;
+    const tmp=res.slice(); tmp[i]=t;
+    let gtxt;
+    if(da===0 && db===0 && had===0) gtxt=`${UN(i)}は どちらも 0こ。つぎの くらいへ！`;
+    else gtxt=`${UN(i)}を あわせるよ。${da}こ ＋ ${db}こ${had?" ＋ くり上がりの1こ":""} ＝ ${t}こ！${t>=10?" 10こを こえた…！":""}`;
+    const st={rows:[["こたえの おきば",tmp],[`「${a}」の のこり`,caRem.slice()],[`「${b}」の のこり`,cbRem.slice()]],
+      guide:gtxt, fill:i-1};
+    steps.push(st);
+    if(t>=10){
+      res[i]=t-10; carry=1; carriesInto[i+1]=true;
+      const bundled=res.slice();
+      if(i+1<L) bundled[i+1]=bundled[i+1]+1;
+      steps.push({rows:[["こたえの おきば",bundled],[`「${a}」の のこり`,caRem.slice()],[`「${b}」の のこり`,cbRem.slice()]],
+        guide:`${UN(i)}が 10こ あつまった！ 10こは ${UN(i+1)} 1こに へんしん！（これが「くり上がり」だよ）`,
+        fill:i});
+    }else{
+      res[i]=t; carry=0;
+      st.fill=i;
+    }
+  }
+  steps.push({rows:[["こたえの おきば",res.slice()]],
+    guide:`ぜんぶ あわせおわり！ ${a} ＋ ${b} ＝ ${sum}！`,
+    fill:L-1, ans:true});
+  return {kind:"add", steps, sum, L, sd, carriesInto, a, b};
+}
+
+function buildSub(a,b){
+  const diff=a-b, L=String(a).length;
+  const UN=i=>PLACE_NAME[i];
+  const cb=digitsLow(b,L), dd=digitsLow(diff,L);
+  const work=digitsLow(a,L), taken=new Array(L).fill(0);
+  const steps=[];
+  steps.push({rows:[[`はじめの数「${a}」`,work.slice()],["とった分",taken.slice()]],
+    guide:`${a} − ${b} を やるよ。${a}を ならべた。ここから ${b}こ分 とっていくよ。1のくらいから！`, fill:-1});
+  for(let i=0;i<L;i++){
+    if(work[i]<cb[i]){
+      let j=i+1; while(work[j]===0) j++;
+      for(let k=j;k>i;k--){
+        work[k]-=1; work[k-1]+=10;
+        steps.push({rows:[["のこり",work.slice()],["とった分",taken.slice()]],
+          guide:`${UN(k-1)}が たりない…！ ${UN(k)}を 1こ ばらして ${UN(k-1)} 10こに へんしん！（これが「くり下がり」だよ）`,
+          fill:i-1});
+      }
+    }
+    const before=work[i];
+    work[i]-=cb[i]; taken[i]+=cb[i];
+    const g = cb[i]===0
+      ? `${UN(i)}で とる分は 0こ。そのまま つぎへ！`
+      : `${UN(i)}を ${cb[i]}こ とったよ。${before}こ − ${cb[i]}こ ＝ のこり ${work[i]}こ。`;
+    steps.push({rows:[["のこり",work.slice()],["とった分",taken.slice()]], guide:g, fill:i});
+  }
+  steps.push({rows:[[`のこり（こたえ）`,work.slice()],[`とった分（${b}）`,taken.slice()]],
+    guide:`とりおわり！ のこりは ${diff}こ。だから ${a} − ${b} ＝ ${diff}！`, fill:L-1, ans:true});
+  return {kind:"sub", steps, diff, L, dd, a, b};
+}
+
+function addHissan(D,fill){
+  const {a,b,L,sd,carriesInto}=D;
+  const W=L+1;
+  const P=(n,w)=>String(n).padStart(w," ");
+  let carryLine="", resLine="";
+  for(let col=0;col<W;col++){
+    const place=W-1-col;
+    carryLine += (place<L && carriesInto[place] && fill>=place-1) ? "1" : " ";
+    resLine  += (place<L && fill>=place) ? String(sd[place]) : " ";
+  }
+  const lines=[];
+  if(carryLine.trim()) lines.push(carryLine);
+  lines.push(P(a,W));
+  lines.push("+"+P(b,W-1));
+  lines.push("─".repeat(W));
+  lines.push(resLine);
+  return lines.join("\n");
+}
+function subHissan(D,fill){
+  const {a,b,L,dd}=D;
+  const W=L+1;
+  const P=(n,w)=>String(n).padStart(w," ");
+  let resLine="";
+  for(let col=0;col<W;col++){
+    const place=W-1-col;
+    resLine += (place<L && fill>=place) ? String(dd[place]) : " ";
+  }
+  return [P(a,W), "-"+P(b,W-1), "─".repeat(W), resLine].join("\n");
+}
+
+const AS={op:"add", a:47, b:85, D:null, idx:0};
+function asSet(op,a,b){
+  a=Math.min(999,Math.max(10,Math.floor(a)||47));
+  b=Math.min(999,Math.max(10,Math.floor(b)||38));
+  if(op==="add" && a+b>999){ b=999-a; if(b<10){ a=989; b=10; } }
+  if(op==="sub"){
+    if(b>a){ const t=a; a=b; b=t; }
+    if(a===b){ if(a<999) a=a+1; else b=b-1; }
+  }
+  AS.op=op; AS.a=a; AS.b=b;
+  AS.D = op==="add" ? buildAdd(a,b) : buildSub(a,b);
+  AS.idx=0;
+  $("asA").value=a; $("asB").value=b;
+  $("asOpAdd").classList.toggle("active-op",op==="add");
+  $("asOpSub").classList.toggle("active-op",op==="sub");
+  $("asOpMark").textContent = op==="add"?"＋":"−";
+  asRender();
+}
+function asRender(){
+  const st=AS.D.steps[AS.idx];
+  const vis=$("asVisual"); vis.innerHTML="";
+  st.rows.forEach(r=>vis.appendChild(blocksRow(r[0],r[1])));
+  $("asGuide").textContent="ステップ"+(AS.idx+1)+"："+st.guide;
+  $("asDots").textContent=(AS.idx+1)+" / "+AS.D.steps.length;
+  $("asHissan").textContent = AS.op==="add" ? addHissan(AS.D,st.fill) : subHissan(AS.D,st.fill);
+  const ab=$("asAns");
+  if(st.ans){
+    ab.style.display="block";
+    ab.textContent = AS.op==="add"
+      ? `こたえ： ${AS.a} ＋ ${AS.b} ＝ ${AS.D.sum} 🎉`
+      : `こたえ： ${AS.a} − ${AS.b} ＝ ${AS.D.diff} 🎉`;
+  } else ab.style.display="none";
+  setPulse("pAS", AS.idx<AS.D.steps.length-1 ? "asNext" : "asG2");
+}
+$("asOpAdd").addEventListener("click",()=>asSet("add",+$("asA").value,+$("asB").value));
+$("asOpSub").addEventListener("click",()=>asSet("sub",+$("asA").value,+$("asB").value));
+$("asGo").addEventListener("click",()=>asSet(AS.op,+$("asA").value,+$("asB").value));
+$("asNext").addEventListener("click",()=>{ if(AS.idx<AS.D.steps.length-1){AS.idx++; asRender();} });
+$("asPrev").addEventListener("click",()=>{ if(AS.idx>0){AS.idx--; asRender();} });
+function gachaAS(level){
+  let a,b;
+  if(AS.op==="add"){
+    if(level===2){ do{a=ri(15,89); b=ri(15,89);}while(a%10+b%10<10); }
+    else{ do{a=ri(115,489); b=ri(115,489);}while(a%10+b%10<10 || a+b>999); }
+    asSet("add",a,b);
+  }else{
+    if(level===2){ do{a=ri(30,99); b=ri(11,a-1);}while(a%10>=b%10); }
+    else{ do{a=ri(300,999); b=ri(111,a-1);}while(a%10>=b%10); }
+    asSet("sub",a,b);
+  }
+}
+$("asG2").addEventListener("click",()=>gachaAS(2));
+$("asG3").addEventListener("click",()=>gachaAS(3));
+
+/* ---------- 問題づくり（共通） ---------- */
+function makeProblem(type){
+  if(type==="mix2") type=["m1","m2","d0","d1","aa1","ss1"][ri(0,5)];
+  if(type==="mix3") type=["m3","m4","d2","d3","aa2","ss2"][ri(0,5)];
+  if(type==="m1"){ const a=ri(12,99), b=ri(2,9); return {kind:"m",a,b,text:`${a} × ${b} =`,ansText:String(a*b)}; }
+  if(type==="m2"){ const a=ri(12,99), b=ri(12,99); return {kind:"m",a,b,text:`${a} × ${b} =`,ansText:String(a*b)}; }
+  if(type==="m3"){ const a=ri(112,987), b=ri(2,9); return {kind:"m",a,b,text:`${a} × ${b} =`,ansText:String(a*b)}; }
+  if(type==="m4"){ const a=ri(112,987), b=ri(12,99); return {kind:"m",a,b,text:`${a} × ${b} =`,ansText:String(a*b)}; }
+  if(type==="d0"){ const v=ri(2,9); const qmin=Math.max(3,Math.ceil(10/v)), qmax=Math.floor(99/v);
+    const q=ri(qmin,qmax), d=q*v; return {kind:"d",d,v,q,r:0,text:`${d} ÷ ${v} =`,ansText:String(q)}; }
+  if(type==="d1"){ const v=ri(2,9); const q=ri(3,Math.floor(96/v)), r=ri(1,v-1); let d=q*v+r;
+    if(d<10) d=v*3+1;
+    return {kind:"d",d,v,q:Math.floor(d/v),r:d%v,text:`${d} ÷ ${v} =`,ansText:`${Math.floor(d/v)} あまり ${d%v}`}; }
+  if(type==="d2"){ const v=ri(2,9); const qmin=Math.ceil(100/v), qmax=Math.floor(999/v);
+    const q=ri(qmin,qmax), d=q*v; return {kind:"d",d,v,q,r:0,text:`${d} ÷ ${v} =`,ansText:String(q)}; }
+  if(type==="d3"){ const v=ri(2,9); const q=ri(Math.ceil(100/v),Math.floor(990/v)), r=ri(1,v-1); const d=q*v+r;
+    return {kind:"d",d,v,q,r,text:`${d} ÷ ${v} =`,ansText:`${q} あまり ${r}`}; }
+  if(type==="aa1"){ let a,b; do{a=ri(15,98); b=ri(15,98);}while(a%10+b%10<10);
+    return {kind:"p",op:"add",a,b,ansNum:a+b,text:`${a} ＋ ${b} =`,ansText:String(a+b)}; }
+  if(type==="aa2"){ let a,b; do{a=ri(115,489); b=ri(115,489);}while(a%10+b%10<10);
+    return {kind:"p",op:"add",a,b,ansNum:a+b,text:`${a} ＋ ${b} =`,ansText:String(a+b)}; }
+  if(type==="ss1"){ let a,b; do{a=ri(30,99); b=ri(11,a-1);}while(a%10>=b%10);
+    return {kind:"p",op:"sub",a,b,ansNum:a-b,text:`${a} − ${b} =`,ansText:String(a-b)}; }
+  // ss2
+  let a,b; do{a=ri(300,999); b=ri(111,a-1);}while(a%10>=b%10);
+  return {kind:"p",op:"sub",a,b,ansNum:a-b,text:`${a} − ${b} =`,ansText:String(a-b)};
+}
+
+/* ---------- れんしゅう ---------- */
+let prCur=null, prGood=0;
+function prShowStars(){ $("prStars").textContent = prGood>0 ? "せいかい " + "⭐".repeat(Math.min(prGood,10)) + " " + prGood + "問！" : ""; }
+$("prNew").addEventListener("click",()=>{
+  prCur=makeProblem($("prType").value);
+  $("prQ").textContent=prCur.text.replace(" =","");
+  $("prAnsRow").style.display="flex";
+  $("prAmariWrap").style.display = prCur.kind==="d" ? "inline" : "none";
+  $("prA1").value=""; $("prA2").value="0";
+  $("prFb").textContent=""; $("prFb").className="feedback";
+  $("prA1").focus();
+  $("hwWrap").style.display="none";
+  $("hwCheckMark").textContent="";
+  LOG("problemShown",{cur:prCur, type:$("prType").value});
+});
+$("prCheck").addEventListener("click",()=>{
+  if(!prCur) return;
+  const a1=+$("prA1").value;
+  let ok=false;
+  if(prCur.kind==="d") ok = (a1===prCur.q && (+$("prA2").value||0)===prCur.r);
+  else if(prCur.kind==="m") ok = (a1===prCur.a*prCur.b);
+  else ok = (a1===prCur.ansNum);
+  const fb=$("prFb");
+  if(ok){ prGood++; fb.textContent="🎉 せいかい！すごい！"; fb.className="feedback good"; }
+  else { fb.textContent="おしい！もういちど かんがえてみよう（「図で やってみる」も つかってね）"; fb.className="feedback retry"; }
+  prShowStars();
+  LOG("answerChecked",{cur:prCur, a1:$("prA1").value, a2:$("prA2").value, fb:$("prFb").className});
+});
+$("prShow").addEventListener("click",()=>{
+  if(!prCur) return;
+  if(prCur.kind==="m"){
+    multSet(prCur.a, prCur.b);
+    document.querySelector('[data-p="pMult"]').click();
+  }else if(prCur.kind==="d"){
+    divSet(prCur.d, prCur.v);
+    document.querySelector('[data-p="pDiv"]').click();
+  }else{
+    asSet(prCur.op, prCur.a, prCur.b);
+    document.querySelector('[data-p="pAS"]').click();
+  }
+  LOG("figureShown",{kind:prCur.kind});
+});
+
+/* ==================================================
+   手書き練習：ひっ算のマス目に 自由に書きこむ
+   ================================================== */
+const hwBgC=$("hwBg"), hwAnsC=$("hwAns"), hwDrawC=$("hwDraw");
+let hwCur=null;
+
+function hwPack(full,given){
+  const question = full.map((line,i)=> given[i] ? line : "");
+  return {question, full, given};
+}
+function hwLines(p){
+  if(p.kind==="m"){
+    const {a,b}=p;
+    const W2 = Math.max(String(a*b).length, String(a).length, String(b).length+1)+2;
+    const P=(n,w)=>String(n).padStart(w," ");
+    const bDigits = String(b).split("").reverse().map(Number); // 1のくらいから じゅんに
+    if(bDigits.length===1){
+      return hwPack([P(a,W2), "×"+P(b,W2-1), "─".repeat(W2), P(a*b,W2)], [true,true,true,false]);
+    }
+    const lines=[P(a,W2), "×"+P(b,W2-1), "─".repeat(W2)];
+    const given=[true,true,true];
+    bDigits.forEach((d,i)=>{
+      lines.push(P(a*d, W2-i)+" ".repeat(i));
+      given.push(false);
+    });
+    lines.push("─".repeat(W2)); given.push(true);
+    lines.push(P(a*b,W2)); given.push(false);
+    return hwPack(lines, given);
+  }
+  if(p.kind==="d"){
+    const M=computeDiv(p.d,p.v);
+    const full=divHissanTxt(M,p.v,M.L-1,M.L-1).split("\n");
+    return hwPack(full, full.map((_,i)=>i===1));
+  }
+  // kind "p"：たし算・ひき算
+  const D = p.op==="add" ? buildAdd(p.a,p.b) : buildSub(p.a,p.b);
+  const P=(n,w)=>String(n).padStart(w," ");
+  if(p.op==="add"){
+    const {a,b,L,sd,carriesInto}=D, W=L+1;
+    let carryLine="", resLine="";
+    for(let col=0;col<W;col++){
+      const place=W-1-col;
+      carryLine += (place<L && carriesInto[place]) ? "1" : " ";
+      resLine += (place<L) ? String(sd[place]) : " ";
+    }
+    return hwPack([carryLine, P(a,W), "+"+P(b,W-1), "─".repeat(W), resLine], [false,true,true,true,false]);
+  }
+  const {a,b,L,dd}=D, W=L+1;
+  let resLine="";
+  for(let col=0;col<W;col++){
+    const place=W-1-col;
+    resLine += (place<L) ? String(dd[place]) : " ";
+  }
+  return hwPack([P(a,W), "-"+P(b,W-1), "─".repeat(W), resLine], [true,true,true,false]);
+}
+function hwIsSepLine(line){ return line.length>0 && [...line].every(ch=>ch==="─"); }
+
+/* かけ算：問題の行と 各部分積の行の上に くり上がりメモ行を入れる
+   わり算：ひき算をする各段（引く数の行）の上に くり下がりメモ行を入れる */
+function hwMemoBeforeIndices(p,full,given){
+  if(p.kind==="m"){
+    const last=given.length-1;
+    const idx=[0];
+    given.forEach((g,i)=>{ if(!g && i!==last) idx.push(i); });
+    return idx;
+  }
+  if(p.kind==="d"){
+    const idx=[];
+    for(let i=2;i<full.length;i+=3) idx.push(i);
+    return idx;
+  }
+  return [];
+}
+function hwBuildLayout(rowCount,memoBefore,cellH,memoH){
+  const memoSet=new Set(memoBefore);
+  const rowY=[]; const memoBands=[];
+  let y=0;
+  for(let i=0;i<rowCount;i++){
+    if(memoSet.has(i)){ memoBands.push({y,h:memoH}); y+=memoH; }
+    rowY.push(y);
+    y+=cellH;
+  }
+  return {rowY, memoBands, totalH:y};
+}
+function hwDrawLinesAt(ctx,lines,rowY,cellW,cellH,color){
+  ctx.font="bold "+Math.round(cellH*0.5)+"px 'Menlo','Consolas',monospace";
+  ctx.fillStyle=color; ctx.textAlign="center"; ctx.textBaseline="middle";
+  lines.forEach((line,i)=>{
+    const y0=rowY[i];
+    if(hwIsSepLine(line)){
+      const y=y0+6;
+      ctx.save(); ctx.strokeStyle=color; ctx.lineWidth=3;
+      ctx.beginPath(); ctx.moveTo(2,y); ctx.lineTo(line.length*cellW-2,y); ctx.stroke();
+      ctx.restore();
+      return;
+    }
+    [...line].forEach((ch,c)=>{
+      if(ch===" ") return;
+      ctx.fillText(ch, c*cellW+cellW/2, y0+cellH/2);
+    });
+  });
+}
+function hwDrawGridLayout(ctx,cols,cellW,cellH,layout,w,h){
+  ctx.clearRect(0,0,w,h);
+  const wCss=cols*cellW;
+  ctx.strokeStyle="#DCD7C9"; ctx.lineWidth=1;
+  layout.rowY.forEach(y=>{
+    for(let c=0;c<=cols;c++){ ctx.beginPath(); ctx.moveTo(c*cellW+0.5,y); ctx.lineTo(c*cellW+0.5,y+cellH); ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(0,y+0.5); ctx.lineTo(wCss,y+0.5); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0,y+cellH+0.5); ctx.lineTo(wCss,y+cellH+0.5); ctx.stroke();
+  });
+  ctx.save();
+  ctx.strokeStyle="#E7CFA6"; ctx.setLineDash([3,3]); ctx.lineWidth=1;
+  layout.memoBands.forEach(b=>{
+    for(let c=0;c<=cols;c++){ ctx.beginPath(); ctx.moveTo(c*cellW+0.5,b.y); ctx.lineTo(c*cellW+0.5,b.y+b.h); ctx.stroke(); }
+    ctx.strokeRect(0.5,b.y+0.5,wCss-1,b.h-1);
+  });
+  ctx.restore();
+}
+function hwResizeCanvas(c,wCss,hCss,dpr){
+  c.width=Math.round(wCss*dpr); c.height=Math.round(hCss*dpr);
+  c.style.width=wCss+"px"; c.style.height=hCss+"px";
+  const ctx=c.getContext("2d");
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return ctx;
+}
+function hwOpen(p){
+  const {question,full,given}=hwLines(p);
+  const cols=Math.max(...full.map(l=>l.length));
+  const rows=full.length;
+  const memoBefore=hwMemoBeforeIndices(p,full,given);
+
+  $("hwWrap").style.display="block";
+  const box=$("hwCanvasBox");
+  box.style.width=""; box.style.height="";
+  const availW = Math.max(200, box.clientWidth - 4);
+  let cellW = Math.max(26, Math.min(42, Math.floor(availW/cols)));
+  let cellH = Math.max(34, Math.round(cellW*1.28));
+  let memoH = Math.max(16, Math.round(cellH*0.5));
+  let layout = hwBuildLayout(rows,memoBefore,cellH,memoH);
+
+  // メモ行の分だけ縦に伸びすぎる場合は、最低サイズを守りつつ縮小する
+  const targetH = Math.max(320, window.innerHeight*0.6);
+  if(layout.totalH>targetH){
+    const scale = Math.max(26/cellW, targetH/layout.totalH);
+    cellW = Math.max(26, Math.round(cellW*scale));
+    cellH = Math.max(34, Math.round(cellH*scale));
+    memoH = Math.max(16, Math.round(cellH*0.5));
+    layout = hwBuildLayout(rows,memoBefore,cellH,memoH);
+  }
+
+  const wCss=cols*cellW, hCss=layout.totalH;
+  const dpr=window.devicePixelRatio||1;
+  const bgCtx=hwResizeCanvas(hwBgC,wCss,hCss,dpr);
+  hwResizeCanvas(hwAnsC,wCss,hCss,dpr);
+  const drawCtx=hwResizeCanvas(hwDrawC,wCss,hCss,dpr);
+  drawCtx.strokeStyle="#222"; drawCtx.fillStyle="#222";
+  drawCtx.lineWidth=Math.max(4,Math.round(cellW*0.13)); drawCtx.lineCap="round"; drawCtx.lineJoin="round";
+  const BORDER=4; // .hw-canvas-box has a 2px border on each side (box-sizing:border-box)
+  box.style.width=(wCss+BORDER)+"px";
+  box.style.height=(hCss+BORDER)+"px";
+  hwDrawGridLayout(bgCtx,cols,cellW,cellH,layout,wCss,hCss);
+  hwDrawLinesAt(bgCtx,question,layout.rowY,cellW,cellH,"#3A3A3A");
+
+  hwCur={full,given,cellW,cellH,rowY:layout.rowY};
+  hwUpdateCheckMark();
+}
+function hwUpdateCheckMark(){
+  const markEl=$("hwCheckMark");
+  if(!markEl || !prCur) return;
+  const v1=$("prA1").value;
+  if(v1===""){ markEl.textContent=""; return; }
+  const a1=+v1, a2=+($("prA2").value||0);
+  let ok=false;
+  if(prCur.kind==="d") ok=(a1===prCur.q && a2===prCur.r);
+  else if(prCur.kind==="m") ok=(a1===prCur.a*prCur.b);
+  else ok=(a1===prCur.ansNum);
+  markEl.textContent = ok ? "○" : "×";
+}
+$("prA1").addEventListener("input", hwUpdateCheckMark);
+$("prA2").addEventListener("input", hwUpdateCheckMark);
+$("prHandwrite").addEventListener("click",()=>{
+  if(!prCur) return;
+  hwOpen(prCur);
+  $("hwWrap").scrollIntoView({behavior:"smooth", block:"nearest"});
+  LOG("hwOpened",{hw:hwCur, w:hwDrawC.style.width, h:hwDrawC.style.height, dpr:window.devicePixelRatio, mark:$("hwCheckMark").textContent});
+});
+$("hwClear").addEventListener("click",()=>{
+  const ctx=hwDrawC.getContext("2d");
+  ctx.save(); ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,hwDrawC.width,hwDrawC.height);
+  ctx.restore();
+  LOG("hwCleared");
+});
+$("hwCheck").addEventListener("click",()=>{
+  if(!hwCur) return;
+  const {full,given,cellW,cellH,rowY}=hwCur;
+  const ctx=hwAnsC.getContext("2d");
+  ctx.save(); ctx.setTransform(1,0,0,1,0,0);
+  ctx.clearRect(0,0,hwAnsC.width,hwAnsC.height);
+  ctx.restore();
+  full.forEach((line,row)=>{
+    if(given[row]) return;
+    hwDrawLinesAt(ctx,[line],[rowY[row]],cellW,cellH,"rgba(110,110,110,0.65)");
+  });
+  LOG("modelShown");
+});
+
+/* 手書きキャンバスへの描画（ポインター操作／タッチ対応） */
+let hwDrawing=null;
+hwDrawC.addEventListener("pointerdown",(e)=>{
+  e.preventDefault();
+  const r=hwDrawC.getBoundingClientRect();
+  hwDrawing={x:e.clientX-r.left, y:e.clientY-r.top};
+  const ctx=hwDrawC.getContext("2d");
+  ctx.beginPath(); ctx.arc(hwDrawing.x,hwDrawing.y,3,0,Math.PI*2); ctx.fill();
+  window.addEventListener("pointermove",hwDrawMove);
+  window.addEventListener("pointerup",hwDrawEnd,{once:true});
+  window.addEventListener("pointercancel",hwDrawEnd,{once:true});
+});
+function hwDrawMove(e){
+  if(!hwDrawing) return;
+  const r=hwDrawC.getBoundingClientRect();
+  const x=e.clientX-r.left, y=e.clientY-r.top;
+  const ctx=hwDrawC.getContext("2d");
+  ctx.beginPath(); ctx.moveTo(hwDrawing.x,hwDrawing.y); ctx.lineTo(x,y); ctx.stroke();
+  hwDrawing={x,y};
+}
+function hwDrawEnd(){
+  window.removeEventListener("pointermove",hwDrawMove);
+  hwDrawing=null;
+}
+
+/* ---------- プリント ---------- */
+$("ppMake").addEventListener("click",()=>{
+  const type=$("ppType").value, n=+$("ppCount").value;
+  const qs=[]; const seen=new Set();
+  let guard=0;
+  while(qs.length<n && guard<800){
+    guard++;
+    const p=makeProblem(type);
+    if(seen.has(p.text)) continue;
+    seen.add(p.text); qs.push(p);
+  }
+  const names={
+    aa1:"たし算（2けた＋2けた）",aa2:"たし算（3けた＋3けた）",
+    ss1:"ひき算（2けた−2けた）",ss2:"ひき算（3けた−3けた）",
+    m1:"かけ算（2けた×1けた）",m2:"かけ算（2けた×2けた）",
+    m3:"かけ算（3けた×1けた）",m4:"かけ算（3けた×2けた）",
+    d0:"わり算 2けた÷1けた（わりきれる）",d1:"わり算 2けた÷1けた（あまりあり）",
+    d2:"わり算 3けた÷1けた（わりきれる）",d3:"わり算 3けた÷1けた（あまりあり）",
+    mix2:"2けた ミックス",mix3:"3けた ミックス"
+  };
+  let html=`<div class="p-sheet">
+    <div class="p-head"><h2>けいさん れんしゅうプリント：${names[type]}</h2>
+    <div class="p-meta">なまえ <span class="p-blank"></span>　　月　　日　　せいかい <span class="p-blank" style="min-width:12mm"></span> / ${n}問</div></div>
+    <div class="p-grid">`;
+  qs.forEach((p,i)=>{
+    html+=`<div class="p-q"><span class="p-no">${i+1}.</span>${p.text}<div class="p-work"></div></div>`;
+  });
+  html+=`</div></div>
+  <div class="p-sheet p-break">
+    <div class="p-head"><h2>こたえ：${names[type]}</h2></div>
+    <div class="p-ans">`;
+  qs.forEach((p,i)=>{ html+=`<div>${i+1}.　${p.text} <b>${p.ansText}</b></div>`; });
+  html+=`</div></div>`;
+  $("printArea").innerHTML=html;
+  setTimeout(()=>window.print(),150);
+});
+
+/* ---------- 初期表示 ---------- */
+multRender();
+divSet(72,3);
+asSet("add",47,85);
+</script>
+</body>
+</html>
